@@ -1,7 +1,7 @@
 # Project: Media Outlets.
 
 
-## Roles
+## Roles:
 
 - Project Manager: Ridwan 
 - Architect: Suvo
