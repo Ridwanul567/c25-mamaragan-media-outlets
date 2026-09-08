@@ -4,3 +4,5 @@ requests-mock
 pylint
 pytest
 jq
+atproto
+python-dotenv
