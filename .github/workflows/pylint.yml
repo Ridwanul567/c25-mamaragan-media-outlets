@@ -1,0 +1,111 @@
+name: Python Code Quality
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.py'
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint jq
+
+      - name: Prepare directory structure
+        run: |
+          mkdir -p code_review
+          mkdir -p .github/badges
+
+      - name: Initialize log files
+        run: python .utils/make_logs.py
+        continue-on-error: true
+
+      - name: Analyse code with Pylint
+        run: |
+          > code_review/report.txt
+          > code_review/report.json
+          find . -path "./.utils/*" -prune -o -name '*.py' -print \
+            -exec pylint --rcfile ./.pylintrc {} \; \
+            >> code_review/report.txt || true
+
+      - name: Convert raw logs to JSON
+        run: python .utils/parse_raw_python.py
+
+      - name: Extract average score
+        id: average_score
+        run: |
+          SCORE=$(jq -r '.average_score // 0' code_review/report.json)
+          echo "SCORE=$SCORE" >> $GITHUB_ENV
+
+      - name: Extract total errors
+        id: total_errors
+        run: |
+          ERRORS=$(python .utils/count_errors.py)
+          echo "ERRORS=$ERRORS" >> $GITHUB_ENV
+
+      - name: Generate Quality Badge SVG
+        uses: emibcn/badge-action@v1
+        with:
+          label: 'Code Quality'
+          status: ${{ format('{0}/10', env.SCORE) }}
+          color: 'blue'
+          path: .github/badges/code_quality.svg
+          scale: 1.5
+
+      - name: Generate Errors Badge SVG
+        uses: emibcn/badge-action@v1
+        with:
+          label: 'Total Errors'
+          status: ${{ env.ERRORS }}
+          color: 'red'
+          path: .github/badges/total_errors.svg
+          scale: 1.5
+
+      - name: Upload Quality Badge Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-badge
+          path: .github/badges/code_quality.svg
+          if-no-files-found: ignore
+          overwrite: true
+
+      - name: Upload Errors Badge Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: errors-badge
+          path: .github/badges/total_errors.svg
+          if-no-files-found: ignore
+          overwrite: true
+
+      - name: Commit and push updated badges & reports
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git add code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
+          git diff-index --quiet HEAD || (git commit -m "chore(ci): update code quality scores and badges [skip ci]" && git push)

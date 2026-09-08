@@ -1,4 +1,4 @@
-# Project: Media Outlets.
+# Project: Media Outlets
 
 
 ## Roles:
