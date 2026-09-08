@@ -19,8 +19,11 @@ def get_html_content(url: str) -> str:
 
 
 def extract_text_from_html(html_content: str) -> str:
-    """Extract and return the text content from the given HTML string."""
+    """Extract and return the text content from the article HTML tags."""
     soup = BeautifulSoup(html_content, "html.parser")
+    article = soup.find("article")
+    if article:
+        return article.get_text()
     return soup.get_text()
 
 
@@ -36,7 +39,7 @@ def clean_nouns(nouns: list) -> list:
     invalid_nouns = {"the", "an", "and", "or", "but", "we",
                      "is", "are", "was", "were", "has", "have",
                      "had", "it", "I'm", "my", "me", "my sounds",
-                     "he", "she", "they", "so"}
+                     "he", "she", "they", "so", "this", "in"}
     for noun in nouns:
         noun = noun.strip().lower()
         if len(noun) > 1:
@@ -46,27 +49,30 @@ def clean_nouns(nouns: list) -> list:
                 else:
                     noun_counts[noun] += 1
     noun_counts = {noun: count for noun,
-                   count in noun_counts.items() if count > 2}
+                   count in noun_counts.items() if count > 1}
     return noun_counts
 
 
-if __name__ == "__main__":
-    articles = load_articles()
-    links = articles["link"]
-    url = links.iloc[0]
-    html_content = get_html_content(url)
-    text_content = extract_text_from_html(html_content)
-    nouns = find_nouns(text_content)
-    noun_counts = clean_nouns(nouns)
-    print(noun_counts)
-
-    blob = TextBlob(text_content)
-    print(blob.sentiment)
+def collate_nouns(noun_counts: dict) -> dict:
+    """Collate nouns of similar form."""
+    for noun in list(noun_counts.keys()):
+        for other_noun in list(noun_counts.keys()):
+            if noun != other_noun and noun in other_noun:
+                noun_counts[other_noun] += noun_counts.pop(noun)
+    return noun_counts
 
 
-def spacy_keywords(text_content: str):
+def find_keywords(noun_counts: dict, top_n: int = 3) -> list:
+    """Return the top N most popular nouns based on their counts."""
+    sorted_nouns = sorted(noun_counts.items(),
+                          key=lambda item: item[1], reverse=True)
+    return [noun for noun, count in sorted_nouns[:top_n]]
+
+
+def identify_keywords(text: str):
     nlp = spacy.load("en_core_web_sm")
-    doc = nlp(text_content)
+
+    doc = nlp(text)
 
     companies = set()
     people = set()
@@ -95,3 +101,33 @@ def spacy_keywords(text_content: str):
     print("\n🎬 Key Actions occurring (Top Verbs):")
     # Display the first 10 unique actions found
     print(", ".join(list(actions)[:10]) if actions else "None found")
+
+
+def get_article_sentiment(text: str):
+    blob = TextBlob(text)
+    return blob.sentiment.polarity, blob.sentiment.subjectivity
+
+
+if __name__ == "__main__":
+    articles = load_articles()
+    links = articles["link"]
+    url = links.iloc[3]
+    print(url)
+    html_content = get_html_content(url)
+    text_content = extract_text_from_html(html_content)
+    nouns = find_nouns(text_content)
+    noun_counts = clean_nouns(nouns)
+    print(noun_counts)
+    noun_counts = collate_nouns(noun_counts)
+    keywords = find_keywords(noun_counts)
+    print(keywords)
+    # identify_keywords(text_content)
+
+    polarity, subjectivity = get_article_sentiment(text_content)
+    print(f"Polarity: {polarity}")
+    print(f"Subjectivity: {subjectivity}")
+
+
+# If link does not work. need to try except .. not raise
+# Nouns should be collated to larger noun groups e.g. Liam -> Liam Callaghan but not Oasis -> Oasis'
+# General collate_nouns needs work - easy to fail
