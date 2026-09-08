@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 import requests
 import pandas as pd
 
-BBC_RSS_URL = 'https://feeds.bbci.co.uk/news/rss.xml'
-SKY_RSS_URL = 'https://feeds.skynews.com/feeds/rss/home.xml'
+BBC_RSS_URL = 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml'
+SKY_RSS_URL = 'https://feeds.skynews.com/feeds/rss/entertainment.xml'
 
 
 def get_rss_feed(url) -> ET.Element:
