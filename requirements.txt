@@ -4,3 +4,5 @@ requests-mock
 pylint
 pytest
 jq
+bs4
+textblob
