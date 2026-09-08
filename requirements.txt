@@ -1,3 +1,6 @@
+requests
+pandas
+requests-mock
 pylint
 pytest
 jq
