@@ -1,2 +1,34 @@
 *.csv
-__pycache__/*
+
+# Terraform local state and runtime files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Terraform environment variables
+*.tfvars
+*.tfvars.json
+
+# Python virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Project output files & local data dumps
+articles.csv
+code_review/
+.github/badges/
+
+# IDE & Editor settings
+.vscode/
