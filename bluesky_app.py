@@ -1,5 +1,8 @@
-from dotenv import load_dotenv
+"""Functionality to make posts to Bluesky"""
+
 import os
+
+from dotenv import load_dotenv
 from atproto import Client
 
 load_dotenv()
@@ -8,7 +11,6 @@ load_dotenv()
 client = Client()
 HANDLE = os.environ["HANDLE"]
 PASSWORD = os.environ["PASSWORD"]
-
 
 client.login(HANDLE, PASSWORD)
 
@@ -21,12 +23,9 @@ def post_message(message: str):
         did = post.uri.split('/')[2]  # the DID is embedded in the URI itself
         url = f"https://bsky.app/profile/{did}/post/{rkey}"
         return url
-    
     except Exception as e:
-        print(f"Failed to post: {e}")
+        print(f"Failed to post: {type(e).__name__}: {e}")
         return None
-    
 
-    
 if __name__ == "__main__":
     print(post_message("Hello!"))
