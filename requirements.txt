@@ -1,4 +1,14 @@
-python-dotenv
 atproto
-pytest
+requests
+pandas
+requests-mock
 pylint
+pytest
+jq
+bs4
+curl-cffi
+python-dotenv
+boto3
+botocore
+openai
+pydantic
