@@ -109,3 +109,8 @@ jobs:
           git checkout main
           git add code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
           git diff-index --quiet HEAD || (git commit -m "chore(ci): update code quality scores and badges [skip ci]" && git push)
+
+      - name: Enforce minimum quality score
+        run: |
+          echo "Pylint score: $SCORE / 10 (minimum required: 8.0)"
+          awk -v score="$SCORE" 'BEGIN { exit (score >= 8.0) ? 0 : 1 }'
