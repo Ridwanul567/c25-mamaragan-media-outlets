@@ -1,24 +1,36 @@
 """File to handle database writes to DynamoDB."""
-
+import os
 from botocore.exceptions import ClientError
 import boto3
 from typing import Any, Dict, List
 import logging
 from decimal import Decimal
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("db_writer")
 
+load_dotenv()
+
 TABLE_NAME = "c25-mamaragan-media-outlets-articles"
 
 
-def filter_new_articles(articles: list[dict], table_name: str = TABLE_NAME) -> list[dict]:
+def get_boto3_session() -> boto3.Session:
+    """Create a boto3 session using credentials from environment variables."""
+    return boto3.Session(
+        aws_access_key_id=os.environ["ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["SECRET_ACCESS_KEY"],
+        region_name=os.environ.get("AWS_REGION", "eu-west-2"))
+
+
+def filter_new_articles(articles: list[dict], session: boto3.Session, table_name: str = TABLE_NAME) -> list[dict]:
     """Return only articles whose IDs do not already exist in DynamoDB."""
     if not articles:
         return []
 
-    dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+    dynamodb = session.resource(
+        "dynamodb", region_name="eu-west-2")
     table = dynamodb.Table(table_name)
 
     new_articles = []
@@ -41,13 +53,14 @@ def _format_floats(obj: Any) -> Any:
     return obj
 
 
-def save_articles_to_dynamodb(articles: List[Dict[str, Any]], table_name: str = TABLE_NAME) -> int:
+def save_articles_to_dynamodb(articles: List[Dict[str, Any]], session: boto3.Session, table_name: str = TABLE_NAME) -> int:
     """Batch upload enriched articles into DynamoDB."""
     if not articles:
         logger.warning("No articles provided to save.")
         return 0
 
-    dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+    dynamodb = session.resource(
+        "dynamodb", region_name="eu-west-2")
     table = dynamodb.Table(table_name)
     items_written = 0
 

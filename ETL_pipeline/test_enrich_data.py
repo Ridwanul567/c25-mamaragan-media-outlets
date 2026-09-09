@@ -1,15 +1,15 @@
 """Test suite for enrich_data.py functions."""
 
-from unittest.mock import MagicMock, patch
-import pytest
-from requests.exceptions import HTTPError
-
 from enrich_data import (
     analyse_text_with_openai,
     enrich_articles,
     extract_text_from_html,
     get_html_content,
 )
+from requests.exceptions import HTTPError
+import pytest
+from unittest.mock import MagicMock, patch
+
 
 SAMPLE_URL = "https://random.co.uk/random"
 

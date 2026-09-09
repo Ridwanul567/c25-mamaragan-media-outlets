@@ -21,3 +21,9 @@ variable "resource_prefix" {
   type        = string
   default     = "c25-mamaragan-media-outlets"
 }
+
+variable "ecs_cluster_name" {
+  description = "Name of the ECS cluster"
+  type        = string
+  default     = "c25-ecs-cluster"
+}

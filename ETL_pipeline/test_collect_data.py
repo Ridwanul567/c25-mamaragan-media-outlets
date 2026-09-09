@@ -1,14 +1,14 @@
 """Unit tests for enrich_data module functions contained in test_collect_data.py."""
 
-from unittest.mock import MagicMock, patch
-import pytest
-from requests.exceptions import HTTPError
-
 from enrich_data import (
     enrich_articles,
     extract_text_from_html,
     get_html_content,
 )
+from requests.exceptions import HTTPError
+import pytest
+from unittest.mock import MagicMock, patch
+
 
 # Sample HTML fixtures for testing
 VALID_HTML = """<html>
