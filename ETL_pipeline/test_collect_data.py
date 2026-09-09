@@ -6,7 +6,6 @@ from requests.exceptions import HTTPError
 
 from enrich_data import (
     enrich_articles,
-    extract_entities,
     extract_text_from_html,
     get_html_content,
 )
@@ -51,16 +50,6 @@ def test_extract_text_from_html_strip_tags():
     assert "Simple body content" in text
 
 
-def test_extract_entities_spacy():
-    """Verify spaCy extracts PERSON, ORG, or PRODUCT labels cleanly."""
-    text = "Taylor Swift performed a concert for Apple in London."
-    entities = extract_entities(text)
-
-    entity_texts = [e["text"] for e in entities]
-    assert "Taylor Swift" in entity_texts
-    assert "Apple" in entity_texts
-
-
 @patch("enrich_data.get_html_content")
 @patch("enrich_data.requests.Session")
 def test_enrich_articles_populates_scores_and_entities(mock_session_cls, mock_get_html):
@@ -96,29 +85,36 @@ def test_get_html_content_rejects_non_html():
                          session=mock_session)
 
 
+@patch("enrich_data.analyse_text_with_openai")
 @patch("enrich_data.get_html_content")
 @patch("enrich_data.requests.Session")
-def test_enrich_articles_handles_http_failure_fallback(mock_session_cls, mock_get_html):
+def test_enrich_articles_handles_http_failure_fallback(
+    mock_session_cls, mock_get_html, mock_analyze
+):
     """Ensure if scraping full text fails (404/403), it falls back to title/description."""
     mock_get_html.side_effect = HTTPError("403 Forbidden")
+    mock_analyze.return_value = {
+        "entities": [{"text": "Taylor Swift", "label": "PERSON", "count": 1}],
+        "keywords": ["tour", "music"],
+        "sentiment_score": 0.5,
+        "subjectivity_score": 0.3,
+    }
+
     sample_articles = [{
         "article_id": "https://www.independent.co.uk/arts-entertainment/failed",
         "title": "Taylor Swift Tour",
         "link": "https://www.independent.co.uk/arts-entertainment/failed",
         "description": "Taylor Swift announces tour dates.",
-        "outlet": "The Independent"
+        "outlet": "The Independent",
     }]
 
     # Should NOT raise an exception
     enriched = enrich_articles(sample_articles)
 
     assert len(enriched) == 1
-    # Check that fallback text was evaluated for entities
     entity_texts = [e["text"] for e in enriched[0]["entities"]]
     assert "Taylor Swift" in entity_texts
-
-
-def test_extract_entities_handles_empty_string():
-    """Verify empty text strings return an empty list without throwing errors."""
-    assert extract_entities("") == []
-    assert extract_entities(None) == []
+    mock_analyze.assert_called_once_with(
+        "Taylor Swift Tour Taylor Swift announces tour dates."
+    )
+    assert "keywords" in enriched[0]
