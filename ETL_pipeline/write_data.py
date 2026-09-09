@@ -1,24 +1,37 @@
 """File to handle database writes to DynamoDB."""
 
+from botocore.exceptions import ClientError
+import boto3
+from typing import Any, Dict, List
 import logging
 from decimal import Decimal
-from typing import Any, Dict, List
-import boto3
-from botocore.exceptions import ClientError
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("db_writer")
 
 TABLE_NAME = "c25-mamaragan-media-outlets-articles"
 
 
-# Helper function to format float values for DynamoDB compatibility
+def filter_new_articles(articles: list[dict], table_name: str = TABLE_NAME) -> list[dict]:
+    """Return only articles whose IDs do not already exist in DynamoDB."""
+    if not articles:
+        return []
+
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+    table = dynamodb.Table(table_name)
+
+    new_articles = []
+    for article in articles:
+        response = table.get_item(Key={"article_id": article["article_id"]})
+        if "Item" not in response:
+            new_articles.append(article)
+
+    return new_articles
+
+
 def _format_floats(obj: Any) -> Any:
-    """Convert float values to Decimal for DynamoDB compatibility."""
+    """Recursively convert float values to Decimal for DynamoDB compatibility."""
     if isinstance(obj, float):
         return Decimal(str(obj))
     if isinstance(obj, dict):
@@ -28,10 +41,7 @@ def _format_floats(obj: Any) -> Any:
     return obj
 
 
-# Function to save articles to DynamoDB
-def save_articles_to_dynamodb(
-    articles: List[Dict[str, Any]], table_name: str = TABLE_NAME
-) -> int:
+def save_articles_to_dynamodb(articles: List[Dict[str, Any]], table_name: str = TABLE_NAME) -> int:
     """Batch upload enriched articles into DynamoDB."""
     if not articles:
         logger.warning("No articles provided to save.")
@@ -39,10 +49,7 @@ def save_articles_to_dynamodb(
 
     dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
     table = dynamodb.Table(table_name)
-
     items_written = 0
-    logger.info("Starting batch upload of %d items to %s",
-                len(articles), table_name)
 
     try:
         with table.batch_writer() as batch:
