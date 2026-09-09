@@ -3,6 +3,7 @@
 from curl_cffi import requests
 import logging
 import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 
 BBC_RSS_URL = "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"
 INDEPENDENT_RSS_URL = "https://www.independent.co.uk/arts-entertainment/rss"
@@ -16,6 +17,13 @@ HEADERS = {
 }
 
 
+def clean_html_text(raw_text: str) -> str:
+    """Strip embedded HTML tags (like <p>, <a>) from raw text."""
+    if not raw_text:
+        return ""
+    return BeautifulSoup(raw_text, "html.parser").get_text(strip=True)
+
+
 def get_rss_feed(url: str) -> ET.Element:
     """Fetch and parse RSS XML."""
     response = requests.get(url, impersonate="chrome",
@@ -25,14 +33,14 @@ def get_rss_feed(url: str) -> ET.Element:
 
 
 def extract_articles_from_xml(root: ET.Element, outlet_name: str) -> list[dict]:
-    """Extract article metadata."""
+    """Extract article metadata with clean plain-text fields."""
     articles = []
     for item in root.findall(".//item"):
         # Safe string fallback for missing nodes
         link = (item.findtext("link") or item.findtext("guid") or "").strip()
-        title = (item.findtext("title") or "Untitled Article").strip()
+        raw_title = (item.findtext("title") or "Untitled Article").strip()
         pub_date = (item.findtext("pubDate") or "").strip()
-        description = (item.findtext("description") or "").strip()
+        raw_description = (item.findtext("description") or "").strip()
 
         # Skip entries without valid links
         if not link:
@@ -42,10 +50,10 @@ def extract_articles_from_xml(root: ET.Element, outlet_name: str) -> list[dict]:
 
         articles.append({
             "article_id": link,
-            "title": title,
+            "title": clean_html_text(raw_title),
             "link": link,
             "published_date": pub_date,
-            "description": description,
+            "description": clean_html_text(raw_description),  # Strips <p> tags
             "outlet": outlet_name,
         })
     return articles
