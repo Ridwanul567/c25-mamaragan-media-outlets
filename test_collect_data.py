@@ -6,15 +6,15 @@ import requests
 import pytest
 from collect_data import get_rss_feed, get_articles, convert_to_dataframe
 
-BBC_RSS_URL = 'https://feeds.bbci.co.uk/news/rss.xml'
+SAMPLE_URL = 'https://random.co.uk/url.xml'
 
 
 def test_get_rss_feed_client_error(requests_mock):
     """Test that get_rss_feed raises an exception on client error."""
-    requests_mock.get(BBC_RSS_URL,
+    requests_mock.get(SAMPLE_URL,
                       status_code=400)
     with pytest.raises(Exception) as exception:
-        get_rss_feed(BBC_RSS_URL)
+        get_rss_feed(SAMPLE_URL)
 
     assert requests_mock.called
     assert requests_mock.call_count == 1
@@ -25,10 +25,10 @@ def test_get_rss_feed_client_error(requests_mock):
 
 def test_get_rss_feed_server_error(requests_mock):
     """Test that get_rss_feed raises an exception on server error."""
-    requests_mock.get(BBC_RSS_URL,
+    requests_mock.get(SAMPLE_URL,
                       status_code=500)
     with pytest.raises(Exception) as exception:
-        get_rss_feed(BBC_RSS_URL)
+        get_rss_feed(SAMPLE_URL)
 
     assert requests_mock.called
     assert requests_mock.call_count == 1

@@ -4,7 +4,10 @@ requests-mock
 pylint
 pytest
 jq
-boto3
-botocore
+bs4
+textblob
+curl-cffi
 atproto
 python-dotenv
+boto3
+botocore
