@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint jq
+          pip install -r requirements.txt
 
       - name: Prepare directory structure
         run: |
@@ -45,11 +45,14 @@ jobs:
 
       - name: Analyse code with Pylint
         run: |
-          > code_review/report.txt
-          > code_review/report.json
-          find . -path "./.utils/*" -prune -o -name '*.py' -print \
-            -exec pylint --rcfile ./.pylintrc {} \; \
+          rm -f code_review/report.txt code_review/report.json
+          find . \( -path "./.utils/*" -o -path "./.venv/*" -o -path "./venv/*" \) -prune \
+            -o -name '*.py' -not -name 'test_*.py' -not -name '*_test.py' -not -name 'test.py' -print \
+            | xargs pylint --rcfile ./.pylintrc \
             >> code_review/report.txt || true
+
+      - name: Show pylint report
+        run: cat code_review/report.txt
 
       - name: Convert raw logs to JSON
         run: python .utils/parse_raw_python.py
@@ -107,5 +110,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git checkout main
-          git add code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
+          git add -f code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
           git diff-index --quiet HEAD || (git commit -m "chore(ci): update code quality scores and badges [skip ci]" && git push)
+
+      - name: Enforce minimum quality score
+        run: |
+          echo "Pylint score: $SCORE / 10 (minimum required: 8.0)"
+          awk -v score="$SCORE" 'BEGIN { exit (score >= 8.0) ? 0 : 1 }'
