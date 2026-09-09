@@ -10,4 +10,4 @@ curl-cffi
 atproto
 python-dotenv
 boto3
-
+botocore
