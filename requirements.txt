@@ -6,3 +6,5 @@ pytest
 jq
 boto3
 botocore
+atproto
+python-dotenv
