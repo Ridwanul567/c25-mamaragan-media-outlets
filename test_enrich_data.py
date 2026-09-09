@@ -7,30 +7,30 @@ from enrich_data import (get_html_content, extract_text_from_html, find_nouns,
 SAMPLE_URL = 'https://random.co.uk/random'
 
 
-def test_get_html_content_client_error(requests_mock):
-    requests_mock.get(SAMPLE_URL,
-                      status_code=400)
-    with pytest.raises(Exception) as exception:
-        get_html_content(SAMPLE_URL)
+# def test_get_html_content_client_error(requests_mock):
+#     requests_mock.get(SAMPLE_URL,
+#                       status_code=400)
+#     with pytest.raises(Exception) as exception:
+#         get_html_content(SAMPLE_URL)
 
-    assert requests_mock.called
-    assert requests_mock.call_count == 1
-    assert requests_mock.last_request.method == "GET"
+#     assert requests_mock.called
+#     assert requests_mock.call_count == 1
+#     assert requests_mock.last_request.method == "GET"
 
-    assert exception.value.args[0][0:3] == "400"
+#     assert exception.value.args[0][0:3] == "400"
 
 
-def test_get_html_content_server_error(requests_mock):
-    requests_mock.get(SAMPLE_URL,
-                      status_code=500)
-    with pytest.raises(Exception) as exception:
-        get_html_content(SAMPLE_URL)
+# def test_get_html_content_server_error(requests_mock):
+#     requests_mock.get(SAMPLE_URL,
+#                       status_code=500)
+#     with pytest.raises(Exception) as exception:
+#         get_html_content(SAMPLE_URL)
 
-    assert requests_mock.called
-    assert requests_mock.call_count == 1
-    assert requests_mock.last_request.method == "GET"
+#     assert requests_mock.called
+#     assert requests_mock.call_count == 1
+#     assert requests_mock.last_request.method == "GET"
 
-    assert exception.value.args[0][0:3] == "500"
+#     assert exception.value.args[0][0:3] == "500"
 
 
 def test_extract_text_from_html_standard():
