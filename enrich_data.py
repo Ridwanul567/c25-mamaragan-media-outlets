@@ -1,3 +1,5 @@
+"""Python script for enriching article data with keywords and sentiment analysis."""
+
 import re
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -92,6 +94,7 @@ def find_keywords(noun_counts: dict, top_n: int = 3) -> list:
 
 
 def get_article_sentiment(text: str) -> tuple:
+    """Return the polarity and subjectivity of the given article."""
     blob = TextBlob(text)
     return blob.sentiment.polarity, blob.sentiment.subjectivity
 
@@ -113,11 +116,13 @@ def load_keywords(url: str) -> list:
 
 
 def create_article_keywords(articles: pd.DataFrame) -> pd.DataFrame:
+    """Add a 'keywords' column to the articles DataFrame based on the article links."""
     articles['keywords'] = articles['link'].apply(load_keywords)
     return articles
 
 
 def load_sentiment(url: str) -> tuple:
+    """Load and return the sentiment (polarity, subjectivity) of the article at the given URL."""
     try:
         html_content = get_html_content(url)
         text = extract_text_from_html(html_content)
@@ -129,6 +134,7 @@ def load_sentiment(url: str) -> tuple:
 
 
 def create_article_sentiment(articles: pd.DataFrame) -> pd.DataFrame:
+    """Add 'polarity' and 'subjectivity' columns to the articles DataFrame based on the article links."""
     sentiment = articles['link'].apply(load_sentiment)
     articles['polarity'] = sentiment.apply(lambda x: x[0])
     articles['subjectivity'] = sentiment.apply(lambda x: x[1])
