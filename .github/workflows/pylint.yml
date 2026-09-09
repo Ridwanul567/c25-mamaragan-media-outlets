@@ -107,7 +107,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git checkout main
-          git add code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
+          git add -f code_review/report.txt code_review/report.json .github/badges/code_quality.svg .github/badges/total_errors.svg
           git diff-index --quiet HEAD || (git commit -m "chore(ci): update code quality scores and badges [skip ci]" && git push)
 
       - name: Enforce minimum quality score
