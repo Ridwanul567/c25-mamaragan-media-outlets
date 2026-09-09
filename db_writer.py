@@ -18,7 +18,7 @@ TABLE_NAME = "c25-mamaragan-media-outlets-articles"
 
 # Helper function to format float values for DynamoDB compatibility
 def _format_floats(obj: Any) -> Any:
-    """Recursively convert float values to Decimal for DynamoDB compatibility."""
+    """Convert float values to Decimal for DynamoDB compatibility."""
     if isinstance(obj, float):
         return Decimal(str(obj))
     if isinstance(obj, dict):
