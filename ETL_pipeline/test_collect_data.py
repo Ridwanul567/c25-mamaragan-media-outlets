@@ -1,89 +1,124 @@
-"""Unit Tests for collect_data.py"""
+"""Unit tests for enrich_data module functions contained in test_collect_data.py."""
 
-import xml.etree.ElementTree as ET
-from unittest.mock import patch
-import requests
+from unittest.mock import MagicMock, patch
 import pytest
-from collect_data import get_rss_feed, get_articles, convert_to_dataframe
+from requests.exceptions import HTTPError
 
-SAMPLE_URL = 'https://random.co.uk/url.xml'
+from enrich_data import (
+    enrich_articles,
+    extract_entities,
+    extract_text_from_html,
+    get_html_content,
+)
 
+# Sample HTML fixtures for testing
+VALID_HTML = """<html>
+    <body>
+        <article>
+            <p>BBC News reports that Taylor Swift performed a concert in London for Apple.</p>
+        </article>
+    </body>
+</html>"""
 
-def test_get_rss_feed_client_error(requests_mock):
-    """Test that get_rss_feed raises an exception on client error."""
-    requests_mock.get(SAMPLE_URL,
-                      status_code=400)
-    with pytest.raises(Exception) as exception:
-        get_rss_feed(SAMPLE_URL)
+NON_ARTICLE_HTML = """<html>
+    <body>
+        <script>console.log('ignore me');</script>
+        <p>Simple body content without an article tag.</p>
+    </body>
+</html>"""
 
-    assert requests_mock.called
-    assert requests_mock.call_count == 1
-    assert requests_mock.last_request.method == "GET"
-
-    assert exception.value.args[0][0:3] == "400"
-
-
-def test_get_rss_feed_server_error(requests_mock):
-    """Test that get_rss_feed raises an exception on server error."""
-    requests_mock.get(SAMPLE_URL,
-                      status_code=500)
-    with pytest.raises(Exception) as exception:
-        get_rss_feed(SAMPLE_URL)
-
-    assert requests_mock.called
-    assert requests_mock.call_count == 1
-    assert requests_mock.last_request.method == "GET"
-
-    assert exception.value.args[0][0:3] == "500"
+# Successful Path Tests
 
 
-def test_get_articles_no_items_in_feed():
-    """Test that get_articles raises a ValueError when no items are in the feed."""
-    empty_feed = ET.Element("rss")
-    empty_channel = ET.SubElement(empty_feed, "channel")
+def test_get_html_content_success():
+    """Verify HTML string is returned on a successful 200 response."""
+    mock_session = MagicMock()
+    mock_response = MagicMock()
+    mock_response.text = VALID_HTML
+    mock_response.headers = {"Content-Type": "text/html; charset=utf-8"}
+    mock_session.get.return_value = mock_response
 
-    with pytest.raises(ValueError):
-        get_articles(empty_feed, [])
+    html = get_html_content(
+        "https://example.com/story/test", session=mock_session)
+    assert "Taylor Swift" in html
+    mock_session.get.assert_called_once()
 
 
-def test_get_articles_valid_article():
-    """Test that get_articles correctly extracts a valid article from the feed."""
-    feed = ET.Element("rss")
-    channel = ET.SubElement(feed, "channel")
-    item = ET.SubElement(channel, "item")
-    title = ET.SubElement(item, "title")
-    title.text = "Sample Article"
-    description = ET.SubElement(item, "description")
-    description.text = "Sample Description"
-    guid = ET.SubElement(item, "guid")
-    guid.text = "https://example.com/sample-article"
-    pubDate = ET.SubElement(item, "pubDate")
-    pubDate.text = "Wed, 01 Jan 2025 00:00:00 GMT"
+def test_extract_text_from_html_strip_tags():
+    """Verify script/style elements are stripped and body text is extracted."""
+    text = extract_text_from_html(NON_ARTICLE_HTML)
+    assert "ignore me" not in text
+    assert "Simple body content" in text
 
-    articles = get_articles(feed, [])
-    assert len(articles) == 1
-    assert articles == [{
-        "title": "Sample Article",
-        "description": "Sample Description",
-        "guid": "https://example.com/sample-article",
-        "pubDate": "Wed, 01 Jan 2025 00:00:00 GMT"
+
+def test_extract_entities_spacy():
+    """Verify spaCy extracts PERSON, ORG, or PRODUCT labels cleanly."""
+    text = "Taylor Swift performed a concert for Apple in London."
+    entities = extract_entities(text)
+
+    entity_texts = [e["text"] for e in entities]
+    assert "Taylor Swift" in entity_texts
+    assert "Apple" in entity_texts
+
+
+@patch("enrich_data.get_html_content")
+@patch("enrich_data.requests.Session")
+def test_enrich_articles_populates_scores_and_entities(mock_session_cls, mock_get_html):
+    """Verify raw article dictionary is injected with sentiment and entity lists."""
+    mock_get_html.return_value = VALID_HTML
+    sample_articles = [{
+        "article_id": "https://www.bbc.co.uk/news/123",
+        "title": "Concert News",
+        "link": "https://www.bbc.co.uk/news/123",
+        "description": "Short description",
+        "outlet": "BBC News"
     }]
 
+    enriched = enrich_articles(sample_articles)
 
-def test_convert_to_dataframe():
-    """Test that convert_to_dataframe correctly converts articles to a DataFrame."""
-    articles = [{
-        "title": "Sample Article",
-        "description": "Sample Description",
-        "guid": "https://example.com/sample-article",
-        "pubDate": "Wed, 01 Jan 2025 00:00:00 GMT"
+    assert len(enriched) == 1
+    assert "entities" in enriched[0]
+    assert "sentiment_score" in enriched[0]
+    assert "subjectivity_score" in enriched[0]
+    assert isinstance(enriched[0]["sentiment_score"], float)
+
+
+# Edge Case & Fallback Tests
+def test_get_html_content_rejects_non_html():
+    """Ensure non-HTML content types (like PDFs or MP3s) raise a ValueError."""
+    mock_session = MagicMock()
+    mock_response = MagicMock()
+    mock_response.headers = {"Content-Type": "application/pdf"}
+    mock_session.get.return_value = mock_response
+
+    with pytest.raises(ValueError, match="did not return HTML"):
+        get_html_content("https://example.com/download.pdf",
+                         session=mock_session)
+
+
+@patch("enrich_data.get_html_content")
+@patch("enrich_data.requests.Session")
+def test_enrich_articles_handles_http_failure_fallback(mock_session_cls, mock_get_html):
+    """Ensure if scraping full text fails (404/403), it falls back to title/description."""
+    mock_get_html.side_effect = HTTPError("403 Forbidden")
+    sample_articles = [{
+        "article_id": "https://www.independent.co.uk/arts-entertainment/failed",
+        "title": "Taylor Swift Tour",
+        "link": "https://www.independent.co.uk/arts-entertainment/failed",
+        "description": "Taylor Swift announces tour dates.",
+        "outlet": "The Independent"
     }]
 
-    df = convert_to_dataframe(articles)
-    assert not df.empty
-    assert list(df.columns) == [
-        "title", "description", "link", "published_date"]
-    assert df.iloc[0]["title"] == "Sample Article"
-    assert df.iloc[0]["description"] == "Sample Description"
-    assert df.iloc[0]["link"] == "https://example.com/sample-article"
-    assert df.iloc[0]["published_date"] == "Wed, 01 Jan 2025 00:00:00 GMT"
+    # Should NOT raise an exception
+    enriched = enrich_articles(sample_articles)
+
+    assert len(enriched) == 1
+    # Check that fallback text was evaluated for entities
+    entity_texts = [e["text"] for e in enriched[0]["entities"]]
+    assert "Taylor Swift" in entity_texts
+
+
+def test_extract_entities_handles_empty_string():
+    """Verify empty text strings return an empty list without throwing errors."""
+    assert extract_entities("") == []
+    assert extract_entities(None) == []

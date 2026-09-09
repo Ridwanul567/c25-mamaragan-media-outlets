@@ -13,6 +13,23 @@ logger = logging.getLogger("db_writer")
 TABLE_NAME = "c25-mamaragan-media-outlets-articles"
 
 
+def filter_new_articles(articles: list[dict], table_name: str = TABLE_NAME) -> list[dict]:
+    """Return only articles whose IDs do not already exist in DynamoDB."""
+    if not articles:
+        return []
+
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+    table = dynamodb.Table(table_name)
+
+    new_articles = []
+    for article in articles:
+        response = table.get_item(Key={"article_id": article["article_id"]})
+        if "Item" not in response:
+            new_articles.append(article)
+
+    return new_articles
+
+
 def _format_floats(obj: Any) -> Any:
     """Recursively convert float values to Decimal for DynamoDB compatibility."""
     if isinstance(obj, float):

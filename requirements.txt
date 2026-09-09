@@ -11,3 +11,4 @@ atproto
 python-dotenv
 boto3
 botocore
+spacy
