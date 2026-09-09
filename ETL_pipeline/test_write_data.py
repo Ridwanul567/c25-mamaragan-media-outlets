@@ -1,11 +1,11 @@
 """Unit tests for db_writer.py using pytest and unittest.mock."""
 
-from decimal import Decimal
-from unittest.mock import MagicMock, patch
-import pytest
-from botocore.exceptions import ClientError
-
 from write_data import _format_floats, save_articles_to_dynamodb
+from botocore.exceptions import ClientError
+import pytest
+from unittest.mock import MagicMock, patch
+from decimal import Decimal
+
 
 # Successful path tests
 
@@ -29,14 +29,14 @@ def test_format_floats():
     assert formatted["int_val"] == 42
 
 
-@patch("write_data.boto3.resource")
-def test_save_articles_to_dynamodb_success(mock_boto_resource):
+def test_save_articles_to_dynamodb_success():
     """Verify that save_articles_to_dynamodb invokes batch_writer properly."""
     mock_dynamodb = MagicMock()
     mock_table = MagicMock()
     mock_batch = MagicMock()
+    mock_session = MagicMock()
 
-    mock_boto_resource.return_value = mock_dynamodb
+    mock_session.resource.return_value = mock_dynamodb
     mock_dynamodb.Table.return_value = mock_table
     mock_table.batch_writer.return_value.__enter__.return_value = mock_batch
 
@@ -49,10 +49,10 @@ def test_save_articles_to_dynamodb_success(mock_boto_resource):
         }
     ]
 
-    written_count = save_articles_to_dynamodb(test_articles)
+    written_count = save_articles_to_dynamodb(test_articles, mock_session)
 
     assert written_count == 1
-    mock_boto_resource.assert_called_once_with(
+    mock_session.resource.assert_called_once_with(
         "dynamodb", region_name="eu-west-2")
     mock_dynamodb.Table.assert_called_once_with(
         "c25-mamaragan-media-outlets-articles")
@@ -61,19 +61,20 @@ def test_save_articles_to_dynamodb_success(mock_boto_resource):
 
 def test_save_articles_empty_list():
     """Ensure saving an empty list returns 0 without connecting to AWS."""
-    written_count = save_articles_to_dynamodb([])
+    mock_session = MagicMock()
+    written_count = save_articles_to_dynamodb([], mock_session)
     assert written_count == 0
 
 
 # Edge cases and failure tests
 
-@patch("write_data.boto3.resource")
-def test_save_articles_dynamodb_client_error(mock_boto_resource):
+def test_save_articles_dynamodb_client_error():
     """Ensure AWS ClientError (e.g., AccessDenied/ProvisionedThroughputExceeded) is caught gracefully."""
     mock_dynamodb = MagicMock()
     mock_table = MagicMock()
+    mock_session = MagicMock()
 
-    mock_boto_resource.return_value = mock_dynamodb
+    mock_session.resource.return_value = mock_dynamodb
     mock_dynamodb.Table.return_value = mock_table
 
     # Simulate DynamoDB throwing a ClientError during batch write context execution
@@ -86,7 +87,7 @@ def test_save_articles_dynamodb_client_error(mock_boto_resource):
     test_articles = [{"article_id": "art_1", "title": "Test"}]
 
     # Should catch the exception, log the error, and return 0 items written
-    written_count = save_articles_to_dynamodb(test_articles)
+    written_count = save_articles_to_dynamodb(test_articles, mock_session)
     assert written_count == 0
 
 
