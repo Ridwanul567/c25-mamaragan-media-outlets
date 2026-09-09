@@ -1,6 +1,7 @@
 """Test suite for enrich_data.py functions."""
 import re
 import pytest
+from unittest.mock import MagicMock, patch
 from enrich_data import (get_html_content, extract_text_from_html, find_nouns,
                          clean_nouns, sort_nouns_by_length, group_nouns, collate_nouns)
 
@@ -155,7 +156,14 @@ def test_collate_nouns_person():
     assert collated_nouns == expected_collated_nouns
 
 
-def test_get_html_content_sky():
-    url = "https://news.sky.com/story/noel-and-liam-gallagher-unite-for-oasiss-uk-documentary-premiere-heres-what-we-learn-from-the-film-13582742"
-    html_content = get_html_content(url)
+@patch("enrich_data.requests.get")
+def test_get_html_content_returns_html(mock_get):
+    mock_response = MagicMock()
+    mock_response.text = "<html><body>sample</body></html>"
+    mock_response.raise_for_status.return_value = None
+    mock_get.return_value = mock_response
+
+    html_content = get_html_content(SAMPLE_URL)
+
     assert "<html" in html_content.lower()
+    mock_get.assert_called_once()
