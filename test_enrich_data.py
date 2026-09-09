@@ -109,6 +109,13 @@ def test_clean_nouns_invalid_nouns():
     assert cleaned_nouns == expected_cleaned_nouns
 
 
+def test_clean_nouns_apostrophe_s():
+    nouns = ["Liam's", "Liam"]
+    expected_cleaned_nouns = {"liam": 2}
+    cleaned_nouns = clean_nouns(nouns)
+    assert cleaned_nouns == expected_cleaned_nouns
+
+
 def test_sort_nouns_by_length():
     noun_counts = {"new york": 2, "new york city": 1, "city": 5}
     expected_sorted_nouns = {"new york city": 1, "new york": 2, "city": 5}
@@ -125,9 +132,9 @@ def test_group_nouns_simple():
 
 
 def test_group_nouns_complex():
-    noun_counts = {"liam": 2, "liam's": 1, "liam callagher": 5, "callagher": 1}
-    expected_grouped_nouns = {"liam callagher": [
-        "callagher", "liam"], "callagher": [], "liam's": ["liam"], "liam": []}
+    noun_counts = {"liam": 2, "liam's": 1, "liam gallagher": 5, "gallagher": 1}
+    expected_grouped_nouns = {"liam gallagher": [
+        "gallagher", "liam"], "gallagher": [], "liam's": ["liam"], "liam": []}
     grouped_nouns = group_nouns(noun_counts)
     assert grouped_nouns == expected_grouped_nouns
 
@@ -146,3 +153,9 @@ def test_collate_nouns_person():
     grouped_nouns = group_nouns(noun_counts)
     collated_nouns = collate_nouns(noun_counts, grouped_nouns)
     assert collated_nouns == expected_collated_nouns
+
+
+def test_get_html_content_sky():
+    url = "https://news.sky.com/story/noel-and-liam-gallagher-unite-for-oasiss-uk-documentary-premiere-heres-what-we-learn-from-the-film-13582742"
+    html_content = get_html_content(url)
+    assert "<html" in html_content.lower()
