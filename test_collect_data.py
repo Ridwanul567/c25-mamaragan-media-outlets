@@ -10,6 +10,7 @@ BBC_RSS_URL = 'https://feeds.bbci.co.uk/news/rss.xml'
 
 
 def test_get_rss_feed_client_error(requests_mock):
+    """Test that get_rss_feed raises an exception on client error."""
     requests_mock.get(BBC_RSS_URL,
                       status_code=400)
     with pytest.raises(Exception) as exception:
@@ -23,6 +24,7 @@ def test_get_rss_feed_client_error(requests_mock):
 
 
 def test_get_rss_feed_server_error(requests_mock):
+    """Test that get_rss_feed raises an exception on server error."""
     requests_mock.get(BBC_RSS_URL,
                       status_code=500)
     with pytest.raises(Exception) as exception:
@@ -36,6 +38,7 @@ def test_get_rss_feed_server_error(requests_mock):
 
 
 def test_get_articles_no_items_in_feed():
+    """Test that get_articles raises a ValueError when no items are in the feed."""
     empty_feed = ET.Element("rss")
     empty_channel = ET.SubElement(empty_feed, "channel")
 
@@ -44,6 +47,7 @@ def test_get_articles_no_items_in_feed():
 
 
 def test_get_articles_valid_article():
+    """Test that get_articles correctly extracts a valid article from the feed."""
     feed = ET.Element("rss")
     channel = ET.SubElement(feed, "channel")
     item = ET.SubElement(channel, "item")
@@ -67,6 +71,7 @@ def test_get_articles_valid_article():
 
 
 def test_convert_to_dataframe():
+    """Test that convert_to_dataframe correctly converts articles to a DataFrame."""
     articles = [{
         "title": "Sample Article",
         "description": "Sample Description",

@@ -4,6 +4,7 @@ requests-mock
 pylint
 pytest
 jq
+boto3
+botocore
 atproto
 python-dotenv
-boto3

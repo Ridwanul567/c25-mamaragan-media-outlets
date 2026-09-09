@@ -28,8 +28,6 @@ env/
 
 # Project output files & local data dumps
 articles.csv
-code_review/
-.github/badges/
 
 # IDE & Editor settings
 .vscode/
