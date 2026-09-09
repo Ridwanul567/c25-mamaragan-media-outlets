@@ -51,6 +51,9 @@ jobs:
             | xargs pylint --rcfile ./.pylintrc \
             >> code_review/report.txt || true
 
+      - name: Show pylint report
+        run: cat code_review/report.txt
+
       - name: Convert raw logs to JSON
         run: python .utils/parse_raw_python.py
 
