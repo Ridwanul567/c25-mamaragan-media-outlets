@@ -1,0 +1,9 @@
+************* Module bluesky_app
+bluesky_app.py:26:11: W0718: Catching too general exception Exception (broad-exception-caught)
+************* Module collect_data
+collect_data.py:18:35: W0621: Redefining name 'articles' from outer scope (line 45) (redefined-outer-name)
+collect_data.py:32:25: W0621: Redefining name 'articles' from outer scope (line 45) (redefined-outer-name)
+
+------------------------------------------------------------------
+Your code has been rated at 9.43/10 (previous run: 9.43/10, +0.00)
+
