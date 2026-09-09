@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint jq
+          pip install -r requirements.txt
 
       - name: Prepare directory structure
         run: |
