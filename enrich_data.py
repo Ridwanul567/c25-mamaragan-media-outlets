@@ -48,17 +48,44 @@ def clean_nouns(nouns: list) -> list:
                     noun_counts[noun] = 1
                 else:
                     noun_counts[noun] += 1
-    noun_counts = {noun: count for noun,
-                   count in noun_counts.items() if count > 1}
+    # noun_counts = {noun: count for noun,
+    #                count in noun_counts.items() if count > 1}
     return noun_counts
 
 
-def collate_nouns(noun_counts: dict) -> dict:
+# def collate_nouns(noun_counts: dict) -> dict:
+#     """Collate nouns of similar form."""
+#     for noun in list(noun_counts.keys()):
+#         for other_noun in list(noun_counts.keys()):
+#             if noun != other_noun and noun in other_noun:
+#                 noun_counts[other_noun] += noun_counts.pop(noun)
+#     return noun_counts
+
+
+def sort_nouns_by_length(noun_counts: dict) -> dict:
+    """Sort nouns by their length in descending order."""
+    return dict(sorted(noun_counts.items(), key=lambda item: len(item[0]), reverse=True))
+
+
+def group_nouns(noun_counts: dict) -> dict:
     """Collate nouns of similar form."""
-    for noun in list(noun_counts.keys()):
-        for other_noun in list(noun_counts.keys()):
-            if noun != other_noun and noun in other_noun:
-                noun_counts[other_noun] += noun_counts.pop(noun)
+    sorted_nouns = sort_nouns_by_length(noun_counts)
+    noun_groups = {}
+    for noun in list(sorted_nouns.keys()):
+        noun_groups[noun] = []
+        for other_noun in list(sorted_nouns.keys()):
+            if noun != other_noun and other_noun in noun:
+                noun_groups[noun].append(other_noun)
+
+    return noun_groups
+
+
+def collate_nouns(noun_counts: dict, grouped_nouns: dict) -> dict:
+    """Collate nouns based on their grouped forms."""
+    for noun, group in grouped_nouns.items():
+        for other_noun in group:
+            if other_noun in noun_counts:
+                noun_counts[noun] += noun_counts.pop(other_noun)
     return noun_counts
 
 
@@ -69,10 +96,10 @@ def find_keywords(noun_counts: dict, top_n: int = 3) -> list:
     return [noun for noun, count in sorted_nouns[:top_n]]
 
 
-def identify_keywords(text: str):
+def identify_keywords(text: list):
     nlp = spacy.load("en_core_web_sm")
 
-    doc = nlp(text)
+    doc = nlp(",".join(text))
 
     companies = set()
     people = set()
@@ -121,7 +148,7 @@ if __name__ == "__main__":
     noun_counts = collate_nouns(noun_counts)
     keywords = find_keywords(noun_counts)
     print(keywords)
-    # identify_keywords(text_content)
+    # identify_keywords(keywords)
 
     polarity, subjectivity = get_article_sentiment(text_content)
     print(f"Polarity: {polarity}")
