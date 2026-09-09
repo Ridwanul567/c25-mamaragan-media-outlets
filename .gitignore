@@ -24,6 +24,7 @@ __pycache__/
 venv/
 ENV/
 env/
+.env
 
 # Project output files & local data dumps
 articles.csv
@@ -32,3 +33,4 @@ code_review/
 
 # IDE & Editor settings
 .vscode/
+.env
