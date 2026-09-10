@@ -1,9 +1,9 @@
-data "aws_ecr_repository" "pipeline-image-repo" {
+resource "aws_ecr_repository" "pipeline-image-repo" {
   name = "${var.resource_prefix}-pipeline-repo"
 }
 
 data "aws_ecr_image" "pipeline-image-version" {
-  repository_name = data.aws_ecr_repository.pipeline-image-repo.name
+  repository_name = aws_ecr_repository.pipeline-image-repo.name
   image_tag       = "latest"
 }
 
