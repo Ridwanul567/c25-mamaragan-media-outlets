@@ -5,13 +5,7 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    cloud {
-       organization = "sigma-labs-media-outlets"
-       workspaces {
-         name = "c25-mamaragan-media-outlets"
-       }
-     }
-   }
+  }
 }
 
 
