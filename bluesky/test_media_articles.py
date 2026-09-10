@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 from decimal import Decimal
 
-from media_articles import get_latest_articles, parse_published_date, analyse_article, summarise_metrics
+from media_articles import get_latest_articles, parse_published_date, analyse_article, summarise_metrics, check_condition
 
 
 
@@ -144,3 +144,32 @@ def test_empty_article_list_returns_empty_results():
 
     assert result["entities"] == {}
     assert result["top_keywords"] == []
+
+
+def make_stats(mention_count, avg_sentiment):
+    return {"label": "PERSON", "mention_count": mention_count, "avg_sentiment": avg_sentiment}
+
+
+def test_flags_strong_positive_above_threshold():
+    stats = {"Star": make_stats(6, 0.75)}
+    result = check_condition(stats, min_mentions=5, sentiment_threshold=0.7, direction="above")
+    assert len(result) == 1
+    assert result[0]["name"] == "Star"
+
+
+def test_excludes_positive_below_sentiment_threshold():
+    stats = {"Star": make_stats(6, 0.5)}
+    result = check_condition(stats, min_mentions=5, sentiment_threshold=0.7, direction="above")
+    assert result == []
+
+
+def test_excludes_entity_below_min_mentions():
+    stats = {"Star": make_stats(2, 0.9)}
+    result = check_condition(stats, min_mentions=5, sentiment_threshold=0.7, direction="above")
+    assert result == []
+
+
+def test_flags_strong_negative_with_below_direction():
+    stats = {"Figure": make_stats(6, -0.6)}
+    result = check_condition(stats, min_mentions=5, sentiment_threshold=-0.5, direction="below")
+    assert len(result) == 1

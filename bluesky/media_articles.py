@@ -96,3 +96,17 @@ def summarise_metrics(articles):
         "entities": entity_stats,
         "top_keywords": top_keywords,
     }
+
+
+def check_condition(entity_stats, min_mentions=5, sentiment_threshold=0.7, direction="above"):
+    """Return entities whose mention count and sentiment trip the given rule."""
+    triggered = []
+    for name, stats in entity_stats.items():
+        if stats["mention_count"] < min_mentions:
+            continue
+        avg = stats["avg_sentiment"]
+        if direction == "above" and avg >= sentiment_threshold:
+            triggered.append({"name": name, **stats})
+        elif direction == "below" and avg <= sentiment_threshold:
+            triggered.append({"name": name, **stats})
+    return triggered
