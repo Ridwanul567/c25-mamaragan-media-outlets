@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from atproto import Client
 
-from media_articles import get_dynamodb_table
+from media_articles import get_dynamodb_table, analyse_article
 
 load_dotenv()
 
@@ -32,7 +32,11 @@ def post_message(message: str, client: Client):
 
 if __name__ == "__main__":
     table = get_dynamodb_table()
-    print(table.key_schema)
-    response = table.scan(Limit=5)
-    for item in response['Items']:
-        print(item)
+    response = table.scan(Limit=1)
+    raw_article = response["Items"][0]
+
+    print("before:")
+    print(raw_article)
+
+    print("after:")
+    print(analyse_article(raw_article))

@@ -1,7 +1,9 @@
 from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
+from decimal import Decimal
 
-from media_articles import get_latest_articles, parse_published_date
+from media_articles import get_latest_articles, parse_published_date, analyse_article
+
 
 
 def make_article(published_date, article_id="some-id"):
@@ -51,3 +53,47 @@ def test_get_latest_articles_returns_empty_list_when_no_items():
     result = get_latest_articles(table)
 
     assert result == []
+
+def test_converts_decimals_to_float_including_nested_entity_counts():
+    article = {
+        "sentiment_score": Decimal("0.2"),
+        "subjectivity_score": Decimal("0.6"),
+        "entities": [{"text": "Jane Doe", "label": "PERSON", "count": Decimal("2")}],
+    }
+    result = analyse_article(article)
+
+    assert isinstance(result["sentiment_score"], float)
+    assert isinstance(result["subjectivity_score"], float)
+    assert isinstance(result["entities"][0]["count"], float)
+
+
+def test_extracts_correct_values_not_just_correct_types():
+    article = {
+        "title": "Some title",
+        "outlet": "The Independent",
+        "sentiment_score": Decimal("0.2"),
+        "keywords": ["Film", "Drama"],
+        "entities": [{"text": "Jane Doe", "label": "PERSON", "count": Decimal("2")}],
+    }
+    result = analyse_article(article)
+
+    assert result["title"] == "Some title"
+    assert result["outlet"] == "The Independent"
+    assert result["sentiment_score"] == 0.2
+    assert result["keywords"] == ["Film", "Drama"]
+    assert result["entities"][0]["text"] == "Jane Doe"
+    assert result["entities"][0]["count"] == 2.0
+
+
+def test_missing_fields_get_sensible_defaults():
+    result = analyse_article({})
+
+    assert result["title"] == ""
+    assert result["outlet"] == "unknown"
+    assert result["entities"] == []
+    assert result["keywords"] == []
+
+
+def test_empty_entities_list_stays_empty_no_crash():
+    result = analyse_article({"entities": []})
+    assert result["entities"] == []

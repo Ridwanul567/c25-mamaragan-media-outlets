@@ -44,3 +44,18 @@ def get_latest_articles(table):
     return latest
 
 
+def analyse_article(article):
+    """Pull out the relevant fields from one article, with clean types."""
+    entities = [
+        {**entity, "count": float(entity.get("count", 1))}
+        for entity in article.get("entities", [])
+    ]
+    return {
+        "title": article.get("title", ""),
+        "outlet": article.get("outlet", "unknown"),
+        "link": article.get("link", ""),
+        "sentiment_score": float(article.get("sentiment_score", 0.0)),
+        "subjectivity_score": float(article.get("subjectivity_score", 0.0)),
+        "keywords": list(article.get("keywords", [])),
+        "entities": entities,
+    }
