@@ -106,9 +106,9 @@ def render_visualisations_page():
 
     with st.expander("💡 How to read this chart & drive PR decisions", expanded=False):
         st.write(
-            "**Purpose:** Answers *'What is being said about my client, and is it getting worse?'*\n\n"
-            "* **Green/Red Line:** Shows daily average sentiment score (-1.0 to +1.0). Spikes below 0 indicate negative tone.\n"
-            "* **Purple Bars:** Render total volume of articles published per day. Use bars to distinguish a **lone crank** (1 bad article) from a **coverage crisis** (40 bad articles)."
+            "**Purpose:** *Understand the media's opinion about your client and whether coverage is turning negative.*\n\n"
+            "* **Line Graph (Daily Sentiment):** Shows average sentiment on a scale from **-1.0 (Very Negative)** to **+1.0 (Very Positive)**. Any dip below **0** signals negative coverage.\n"
+            "* **Bar Chart (Article Volume):** Shows how many total articles were published each day. Use bars to distinguish a **lone crank** (1 bad article) from a **coverage crisis** (40 bad articles)."
         )
 
     # Chart Controls
@@ -135,15 +135,15 @@ def render_visualisations_page():
 
     with st.expander("💡 How to read outlet tone", expanded=False):
         st.write(
-            "**Purpose:** Answers *'Which media outlets are driving negative coverage?'*\n\n"
-            "* Identifies top publishers and breaks down their stories into Positive, Neutral, or Negative sentiment.\n"
+            "**Purpose:** *Identify which media outlets are driving negative coverage.*\n\n"
+            "* Identifies top media outlets and breaks down their stories into Positive, Neutral, or Negative sentiment.\n"
             "* **PR Action:** Target outreach toward outlets with high volume and red (negative) bars."
         )
 
     ctrl_col2, _ = st.columns([2, 2])
     with ctrl_col2:
         outlet_limit = st.slider(
-            "Show Top Outlets:",
+            "Number of Top Outlets",
             min_value=2,
             max_value=15,
             value=7,
@@ -162,7 +162,7 @@ def render_visualisations_page():
 
     with st.expander("💡 How to read entity rankings", expanded=False):
         st.write(
-            "**Purpose:** Answers *'Who or what entity is receiving the most extreme coverage?'*\n\n"
+            "**Purpose:** *Identify who or what entity is receiving the most extreme coverage.*\n\n"
             "* **Lowest Sentiment (Risks):** Highlights topics suffering from negative sentiment requiring press response.\n"
             "* **Highest Sentiment (Wins):** Highlights success stories and positive brand associations to emphasize in client reports."
         )
@@ -171,7 +171,7 @@ def render_visualisations_page():
     ctrl_col3, _ = st.columns([2, 2])
     with ctrl_col3:
         leaderboard_mode = st.radio(
-            "Leaderboard Perspective:",
+            "Chart Rankings:",
             options=["Lowest Sentiment (Risks)", "Highest Sentiment (Wins)"],
             horizontal=True,
             key="leaderboard_mode_toggle",

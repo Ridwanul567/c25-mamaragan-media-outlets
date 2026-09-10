@@ -33,17 +33,23 @@ def plot_sentiment_and_volume_timeline(
         )
         .reset_index()
     )
+    daily_df = daily_df.sort_values("published_date")
+    daily_df["date_str"] = daily_df["published_date"].apply(
+        lambda x: x.strftime("%d-%m"))
+
+    date_domain = daily_df["date_str"].tolist()
 
     base = alt.Chart(daily_df).encode(
-        x=alt.X("published_date:T", title="Date"))
+        x=alt.X("date_str:N",
+                title="Date", scale=alt.Scale(domain=date_domain), axis=alt.Axis(labelAngle=0)))
 
     # 1. Volume Layer
     bars = base.mark_bar(
-        opacity=0.4 if view_mode == "Both" else 0.85, color="#8e44ad"
+        opacity=0.4 if view_mode == "Both" else 0.85, color="#8e44ad", size=15
     ).encode(
         y=alt.Y("article_volume:Q", title="Article Volume"),
         tooltip=[
-            "published_date:T",
+            "published_date",
             alt.Tooltip("article_volume:Q", title="Articles Published"),
         ],
     )
