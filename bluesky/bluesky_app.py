@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv
 from atproto import Client
 
+from media_articles import get_dynamodb_table
+
 load_dotenv()
 
 
@@ -29,4 +31,8 @@ def post_message(message: str, client: Client):
         return None
 
 if __name__ == "__main__":
-    ...
+    table = get_dynamodb_table()
+    print(table.key_schema)
+    response = table.scan(Limit=5)
+    for item in response['Items']:
+        print(item)
