@@ -1,9 +1,10 @@
 """All non Bluesky related functions are here"""
 
 import os
-import boto3 
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
+
+import boto3
 
 
  

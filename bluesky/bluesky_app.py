@@ -5,7 +5,9 @@ import os
 from dotenv import load_dotenv
 from atproto import Client
 
-from media_articles import get_dynamodb_table, analyse_article, get_latest_articles, summarise_metrics, check_condition
+from media_articles import (get_dynamodb_table, analyse_article, get_latest_articles, 
+                            summarise_metrics, check_condition,
+                            )
 
 load_dotenv()
 
@@ -48,6 +50,20 @@ def post_positive_alerts(positive_alerts, client):
         if url:
             urls.append(url)
     return urls
+
+
+def format_daily_summary_post(metrics):
+    """Build the plain-text daily topics post from top keywords."""
+    top_five = [keyword for keyword, count in metrics["top_keywords"][:5]]
+    topics = ", ".join(top_five)
+    return f"Today's top entertainment topics: {topics}."
+
+def post_daily_summary(metrics, client):
+    """Post the daily topic summary to Bluesky, return the URL or None."""
+    if not metrics["top_keywords"]:
+        return None
+    message = format_daily_summary_post(metrics)
+    return post_message(message, client)
 
 
 if __name__ == "__main__":
