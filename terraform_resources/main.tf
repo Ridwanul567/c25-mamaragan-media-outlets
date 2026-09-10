@@ -5,9 +5,17 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-  }
+    cloud {
+       organization = "sigma-labs-media-outlets"
+       workspaces {
+         name = "c25-mamaragan-media-outlets"
+       }
+     }
+   }
 }
 
+
+  
 provider "aws" {
   region     = var.aws_region
   access_key = var.aws_access_key
