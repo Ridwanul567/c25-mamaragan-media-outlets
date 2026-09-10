@@ -3,7 +3,7 @@
 import altair as alt
 import pandas as pd
 import pytest
-from src.charts import (
+from charts import (
     plot_entity_sentiment_ranking,
     plot_outlet_volume_and_sentiment,
     plot_sentiment_and_volume_timeline,

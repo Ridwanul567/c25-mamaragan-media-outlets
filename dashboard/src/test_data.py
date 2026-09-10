@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 import pandas as pd
-from src.data import load_data
+from data import load_data
 
 
 @patch("boto3.resource")
