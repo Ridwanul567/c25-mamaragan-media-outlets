@@ -153,14 +153,11 @@ resource "aws_ecs_task_definition" "dashboard_task" {
 }
 
 # Security Group for Task Port Access
-data "aws_vpc" "default" {
-  default = true
-}
 
 resource "aws_security_group" "dashboard_sg" {
   name        = "${var.resource_prefix}-dashboard-sg"
   description = "Security group for Streamlit dashboard ECS task"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.vpc.id
 
   ingress {
     from_port   = 8501
@@ -178,13 +175,6 @@ resource "aws_security_group" "dashboard_sg" {
 }
 
 # ECS Service (Deploys task into existing cluster)
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
 resource "aws_ecs_service" "dashboard_service" {
   name            = "${var.resource_prefix}-dashboard-service"
   cluster         = data.aws_ecs_cluster.ecs-cluster.arn
@@ -193,7 +183,7 @@ resource "aws_ecs_service" "dashboard_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = data.aws_subnets.default.ids
+    subnets          = data.aws_db_subnet_group.public-subnets.subnet_ids
     security_groups  = [aws_security_group.dashboard_sg.id]
     assign_public_ip = true
   }

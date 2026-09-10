@@ -7,8 +7,6 @@ terraform {
     }
   }
 }
-
-
   
 provider "aws" {
   region     = var.aws_region
@@ -18,4 +16,12 @@ provider "aws" {
 
 data "aws_ecs_cluster" "ecs-cluster" {
     cluster_name = var.ecs_cluster_name
+}
+
+data "aws_vpc" "vpc" {
+    id = var.vpc_id
+}
+
+data   "aws_db_subnet_group" "public-subnets" {
+    name = "c25-public-subnet"
 }
