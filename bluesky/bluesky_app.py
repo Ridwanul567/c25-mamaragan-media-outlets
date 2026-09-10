@@ -30,6 +30,26 @@ def post_message(message: str, client: Client):
         print(f"Failed to post: {type(e).__name__}: {e}")
         return None
 
+
+def format_alert_post(entity):
+    """Build the plain-text Bluesky post for a triggered positive entity."""
+    return (
+        f"{entity['name']}: {int(entity['mention_count'])} mentions today, "
+        f"strongly positive coverage (avg sentiment {entity['avg_sentiment']:.2f})."
+    )
+
+
+def post_positive_alerts(positive_alerts, client):
+    """Post one message per triggered positive entity, return the list of URLs."""
+    urls = []
+    for entity in positive_alerts:
+        message = format_alert_post(entity)
+        url = post_message(message, client)
+        if url:
+            urls.append(url)
+    return urls
+
+
 if __name__ == "__main__":
     table = get_dynamodb_table()
 
