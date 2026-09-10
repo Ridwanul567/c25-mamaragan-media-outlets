@@ -1,12 +1,7 @@
-import json
+"""All non Bluesky related functions are here"""
+
 import os
 import boto3 
-from collections import Counter, defaultdict
-from datetime import datetime, timezone
-from decimal import Decimal
-from email.utils import parsedate_to_datetime
-from pathlib import Path
-from typing import Any
 
  
 DEFAULT_TABLE_NAME = "c25-mamaragan-media-outlets-articles"

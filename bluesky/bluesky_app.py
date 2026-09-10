@@ -8,19 +8,20 @@ from atproto import Client
 load_dotenv()
 
 
-client = Client()
-HANDLE = os.environ["HANDLE"]
-PASSWORD = os.environ["PASSWORD"]
+def get_bluesky_client() -> Client:
+    """Log in to Bluesky using credentials from the environment."""
+    client = Client()
+    client.login(os.environ["HANDLE"], os.environ["PASSWORD"])
+    return client
 
-client.login(HANDLE, PASSWORD)
 
-def post_message(message: str):
+def post_message(message: str, client: Client):
     """Posts a given message to the Bluesky bot account"""
 
     try:
         post = client.send_post(message)
         rkey = post.uri.split('/')[-1]
-        did = post.uri.split('/')[2]  # the DID is embedded in the URI itself
+        did = post.uri.split('/')[2] 
         url = f"https://bsky.app/profile/{did}/post/{rkey}"
         return url
     except Exception as e:
@@ -28,4 +29,4 @@ def post_message(message: str):
         return None
 
 if __name__ == "__main__":
-    print(post_message("Hello!"))
+    ...
