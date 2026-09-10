@@ -153,11 +153,10 @@ resource "aws_ecs_task_definition" "dashboard_task" {
 }
 
 # Security Group for Task Port Access
-
 resource "aws_security_group" "dashboard_sg" {
   name        = "${var.resource_prefix}-dashboard-sg"
   description = "Security group for Streamlit dashboard ECS task"
-  vpc_id      = data.aws_vpc.vpc.id
+  vpc_id      = data.aws_db_subnet_group.public-subnets.vpc_id
 
   ingress {
     from_port   = 8501

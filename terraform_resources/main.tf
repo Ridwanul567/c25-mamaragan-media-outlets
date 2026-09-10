@@ -19,7 +19,7 @@ data "aws_ecs_cluster" "ecs-cluster" {
 }
 
 data "aws_vpc" "vpc" {
-    id = var.vpc_id
+  id = data.aws_db_subnet_group.public-subnets.vpc_id
 }
 
 data   "aws_db_subnet_group" "public-subnets" {
