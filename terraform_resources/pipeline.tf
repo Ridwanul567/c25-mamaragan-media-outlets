@@ -1,10 +1,6 @@
 resource "aws_ecr_repository" "pipeline-image-repo" {
   name = "${var.resource_prefix}-pipeline-repo"
-}
-
-data "aws_ecr_image" "pipeline-image-version" {
-  repository_name = aws_ecr_repository.pipeline-image-repo.name
-  image_tag       = "latest"
+  image_tag_mutability = "MUTABLE"
 }
 
 
@@ -61,6 +57,6 @@ resource "aws_lambda_function" "pipeline-lambda" {
   function_name = "${var.resource_prefix}-pipeline-lambda"
   role = aws_iam_role.pipeline-role.arn
   package_type = "Image"
-  image_uri = data.aws_ecr_image.pipeline-image-version.image_uri
+  image_uri = "${aws_ecr_repository.pipeline-image-repo.repository_url}:latest"
   timeout = 120
 }
