@@ -59,3 +59,40 @@ def analyse_article(article):
         "keywords": list(article.get("keywords", [])),
         "entities": entities,
     }
+
+
+def summarise_metrics(articles):
+    """Combine analysed articles into per-entity stats and top keywords."""
+    entity_stats = {}
+    keyword_counts = {}
+
+    for article in articles:
+        for keyword in article["keywords"]:
+            keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+
+        seen_in_this_article = set()
+        for entity in article["entities"]:
+            name = entity["text"]
+            if name not in entity_stats:
+                entity_stats[name] = {
+                    "label": entity["label"],
+                    "mention_count": 0,
+                    "article_count": 0,
+                    "sentiments": [],
+                }
+            entity_stats[name]["mention_count"] += entity["count"]
+            entity_stats[name]["sentiments"].append(article["sentiment_score"])
+            if name not in seen_in_this_article:
+                entity_stats[name]["article_count"] += 1
+                seen_in_this_article.add(name)
+
+    for stats in entity_stats.values():
+        sentiments = stats.pop("sentiments")
+        stats["avg_sentiment"] = sum(sentiments) / len(sentiments)
+
+    top_keywords = sorted(keyword_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
+
+    return {
+        "entities": entity_stats,
+        "top_keywords": top_keywords,
+    }

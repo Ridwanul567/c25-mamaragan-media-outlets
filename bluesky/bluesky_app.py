@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from atproto import Client
 
-from media_articles import get_dynamodb_table, analyse_article
+from media_articles import get_dynamodb_table, analyse_article, get_latest_articles, summarise_metrics
 
 load_dotenv()
 
@@ -32,11 +32,19 @@ def post_message(message: str, client: Client):
 
 if __name__ == "__main__":
     table = get_dynamodb_table()
-    response = table.scan(Limit=1)
-    raw_article = response["Items"][0]
 
-    print("before:")
-    print(raw_article)
+    raw_articles = get_latest_articles(table)
+    print(f"Found {len(raw_articles)} recent articles\n")
 
-    print("after:")
-    print(analyse_article(raw_article))
+    analysed = [analyse_article(article) for article in raw_articles]
+
+    metrics = summarise_metrics(analysed)
+
+    print("Top keywords:")
+    for keyword, count in metrics["top_keywords"]:
+        print(f"  {keyword}: {count}")
+
+    print("\nEntities:")
+    for name, stats in metrics["entities"].items():
+        print(f"  {name} ({stats['label']}): mentioned {stats['mention_count']} times "
+              f"across {stats['article_count']} article(s), avg sentiment {stats['avg_sentiment']:.2f}")

@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 from decimal import Decimal
 
-from media_articles import get_latest_articles, parse_published_date, analyse_article
+from media_articles import get_latest_articles, parse_published_date, analyse_article, summarise_metrics
 
 
 
@@ -97,3 +97,50 @@ def test_missing_fields_get_sensible_defaults():
 def test_empty_entities_list_stays_empty_no_crash():
     result = analyse_article({"entities": []})
     assert result["entities"] == []
+
+
+def make_analysed_article(sentiment, entities, keywords=None):
+    return {
+        "sentiment_score": sentiment,
+        "entities": entities,
+        "keywords": keywords or [],
+    }
+
+
+def test_combines_same_entity_across_multiple_articles():
+    articles = [
+        make_analysed_article(-0.5, [{"text": "Jeremy Piven", "label": "PERSON", "count": 2.0}]),
+        make_analysed_article(-0.3, [{"text": "Jeremy Piven", "label": "PERSON", "count": 1.0}]),
+    ]
+    result = summarise_metrics(articles)
+
+    piven = result["entities"]["Jeremy Piven"]
+    assert piven["mention_count"] == 3.0
+    assert piven["article_count"] == 2
+
+
+def test_average_sentiment_is_correct():
+    articles = [
+        make_analysed_article(-0.6, [{"text": "X", "label": "PERSON", "count": 1.0}]),
+        make_analysed_article(-0.2, [{"text": "X", "label": "PERSON", "count": 1.0}]),
+    ]
+    result = summarise_metrics(articles)
+
+    assert result["entities"]["X"]["avg_sentiment"] == -0.4
+
+
+def test_top_keywords_ordered_by_frequency():
+    articles = [
+        make_analysed_article(0.1, [], keywords=["Film", "Drama"]),
+        make_analysed_article(0.1, [], keywords=["Film"]),
+    ]
+    result = summarise_metrics(articles)
+
+    assert result["top_keywords"][0] == ("Film", 2)
+
+
+def test_empty_article_list_returns_empty_results():
+    result = summarise_metrics([])
+
+    assert result["entities"] == {}
+    assert result["top_keywords"] == []
