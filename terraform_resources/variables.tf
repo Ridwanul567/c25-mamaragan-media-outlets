@@ -27,3 +27,8 @@ variable "ecs_cluster_name" {
   type        = string
   default     = "c25-ecs-cluster"
 }
+
+variable "vpc_id" {
+  description = "ID of the VPC"
+  type        = string
+}
