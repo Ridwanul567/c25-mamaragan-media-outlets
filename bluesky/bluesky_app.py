@@ -68,6 +68,7 @@ def post_daily_summary(metrics, client):
 
 if __name__ == "__main__":
     table = get_dynamodb_table()
+    client = get_bluesky_client()
 
     raw_articles = get_latest_articles(table)
     analysed = [analyse_article(article) for article in raw_articles]
@@ -80,12 +81,15 @@ if __name__ == "__main__":
         metrics["entities"], min_mentions=5, sentiment_threshold=-0.5, direction="below"
     )
 
-    print(f"Positive alerts (would be posted): {len(positive_alerts)}")
-    for entity in positive_alerts:
-        print(f"  {entity['name']}: {entity['mention_count']} mentions, "
-              f"avg sentiment {entity['avg_sentiment']:.2f}")
+    posted_urls = post_positive_alerts(positive_alerts, client)
+    for url in posted_urls:
+        print(f"Posted alert: {url}")
 
-    print(f"\nNegative watchlist: {len(negative_watchlist)}")
+    summary_url = post_daily_summary(metrics, client)
+    if summary_url:
+        print(f"Posted daily summary: {summary_url}")
+
+    print(f"\nNegative watchlist (not posted): {len(negative_watchlist)}")
     for entity in negative_watchlist:
         print(f"  {entity['name']}: {entity['mention_count']} mentions, "
               f"avg sentiment {entity['avg_sentiment']:.2f}")
