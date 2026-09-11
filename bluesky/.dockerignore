@@ -1,0 +1,6 @@
+.env
+.pytest_cache
+__pycache__
+test_bluesky_app.py
+test_media_articles.py
+*.pyc
