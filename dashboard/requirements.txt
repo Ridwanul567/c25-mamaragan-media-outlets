@@ -1,3 +1,6 @@
 boto3
 pandas
 streamlit
+pylint
+pytest
+dotenv
