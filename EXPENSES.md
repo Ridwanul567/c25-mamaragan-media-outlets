@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **$21.63 / £16.00**, with an annualised cost of **$259.56 / £192.00**.
+The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **$21.48 / £15.89**, with an annualised cost of **$257.76 / £190.64**.
 
 ---
 
@@ -131,8 +131,8 @@ The ECR repository stores the containerised dashboard application image.
 | BlueSky Scheduler | 0.0000 |
 | Dashboard ECR | 0.0195 |
 | Dashboard Fargate | 20.73 |
-| **Total Monthly** | **$21.63** |
-| **Total Annual** | **$259.56** |
+| **Total Monthly** | **$21.48** |
+| **Total Annual** | **$257.76** |
 
 ---
 
