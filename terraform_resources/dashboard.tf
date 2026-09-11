@@ -129,6 +129,7 @@ resource "aws_ecs_task_definition" "dashboard_task" {
         { name = "PYTHONDONTWRITEBYTECODE", value = "1" },
         { name = "PYTHONUNBUFFERED", value = "1" },
         { name = "TABLE_NAME", value = aws_dynamodb_table.media_articles.name },
+        { name = "DASHBOARD_PASSWORD", value = var.dashboard_password },
         { name = "AWS_DEFAULT_REGION", value = var.aws_region }
       ]
 

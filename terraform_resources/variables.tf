@@ -32,3 +32,9 @@ variable "vpc_id" {
   description = "ID of the VPC"
   type        = string
 }
+
+variable "dashboard_password" {
+  type        = string
+  description = "Password for Streamlit dashboard access"
+  sensitive   = true
+}
