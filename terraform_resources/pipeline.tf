@@ -123,7 +123,7 @@ resource "aws_iam_role_policy_attachment" "schedule-pipeline-role-policy-connect
 resource "aws_scheduler_schedule" "pipeline-schedule" {
   name                         = "${var.resource_prefix}-pipeline-schedule"
   group_name = "default"
-  schedule_expression          = "cron(0 */3 * * ? *)"
+  schedule_expression          = "cron(0 5-23/3 * * ? *)"
   schedule_expression_timezone = "Europe/London"
   
   flexible_time_window {
