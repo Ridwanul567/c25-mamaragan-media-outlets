@@ -153,7 +153,7 @@ def plot_entity_sentiment_ranking(
         exploded.groupby("entity_name")
         .agg(
             avg_sentiment=("sentiment_score", "mean"),
-            article_count=("title", "count"),
+            article_count=("article_id", "count"),
         )
         .reset_index()
     )
@@ -192,7 +192,7 @@ def plot_entity_sentiment_ranking(
     chart = (
         alt.Chart(chart_data)
         .mark_bar(
-            stroke="#0e1117",  # Matches Streamlit dark background color for crisp gaps
+            stroke="#0e1117",
             strokeWidth=2,
             height=20,  # Fixed individual bar height
         )
