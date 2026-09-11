@@ -29,9 +29,9 @@ def parse_published_date(raw_date):
 
 
 
-def get_latest_articles(table):
-    """Scan the table and return only articles published in the last 24 hours."""
-    since = datetime.now(timezone.utc) - timedelta(days=1)
+def get_latest_articles(table, hours=24):
+    """Scan the table and return only articles published in the last x hours."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
 
     response = table.scan()
     items = response["Items"]

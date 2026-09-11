@@ -4,6 +4,8 @@ import os
 
 from dotenv import load_dotenv
 from atproto import Client
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from media_articles import (get_dynamodb_table, analyse_article, get_latest_articles, 
                             summarise_metrics, check_condition,
@@ -70,7 +72,8 @@ if __name__ == "__main__":
     table = get_dynamodb_table()
     client = get_bluesky_client()
 
-    raw_articles = get_latest_articles(table)
+    # Check for people/orgs getting strong positive coverage - runs every time (every 3 hours per schedule)
+    raw_articles = get_latest_articles(table, hours=3)
     analysed = [analyse_article(article) for article in raw_articles]
     metrics = summarise_metrics(analysed)
 
@@ -85,11 +88,18 @@ if __name__ == "__main__":
     for url in posted_urls:
         print(f"Posted alert: {url}")
 
-    summary_url = post_daily_summary(metrics, client)
-    if summary_url:
-        print(f"Posted daily summary: {summary_url}")
-
     print(f"\nNegative watchlist (not posted): {len(negative_watchlist)}")
     for entity in negative_watchlist:
         print(f"  {entity['name']}: {entity['mention_count']} mentions, "
               f"avg sentiment {entity['avg_sentiment']:.2f}")
+
+    # Post once a day with today's overall top topics - only on the first scheduled run of the day (5am UK time)
+    uk_time = datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/London"))
+    if uk_time.hour == 5:
+        daily_articles = get_latest_articles(table, hours=24)
+        daily_analysed = [analyse_article(article) for article in daily_articles]
+        daily_metrics = summarise_metrics(daily_analysed)
+
+        summary_url = post_daily_summary(daily_metrics, client)
+        if summary_url:
+            print(f"Posted daily summary: {summary_url}")
