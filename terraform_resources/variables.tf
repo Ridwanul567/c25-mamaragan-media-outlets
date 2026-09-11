@@ -38,3 +38,15 @@ variable "dashboard_password" {
   description = "Password for Streamlit dashboard access"
   sensitive   = true
 }
+
+variable "bluesky_handle" {
+  type        = string
+  description = "Bluesky bot account handle"
+  sensitive   = true
+}
+
+variable "bluesky_password" {
+  type        = string
+  description = "Bluesky bot account password"
+  sensitive   = true
+}
