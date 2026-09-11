@@ -163,7 +163,7 @@ terraform apply
 
 #### Pipeline Image
 
-The Pipeline Lambda function collects articles from media outlets, enriches them with sentiment analysis, and stores the results in DynamoDB. The function runs on a schedule (every 3 hours, 5:00 AM – 11:00 PM UK time).
+The Pipeline Lambda function collects articles from media outlets, enriches them with sentiment analysis, and stores the results in DynamoDB. The function runs on an EventBridge Schedule (every 3 hours, 5:00 AM – 11:00 PM UK time).
 
 ```bash
 cd ETL_pipeline
@@ -183,7 +183,7 @@ docker push <account-id>.dkr.ecr.eu-west-2.amazonaws.com/<pipeline-repo-name>:la
 
 #### BlueSky Image
 
-The BlueSky Lambda function scans articles from the past 3 hours, analyses sentiment and keyword frequency, and identifies trending figures. It automatically posts to BlueSky when a figure reaches a mention threshold with strongly positive sentiment, and publishes a daily summary of top entertainment topics. The function runs on a schedule (every 3 hours, 5:10 AM – 11:10 PM UK time) and reads enriched articles from DynamoDB.
+The BlueSky Lambda function scans articles from the past 3 hours, analyses sentiment and keyword frequency, and identifies trending figures. It automatically posts to BlueSky when a figure reaches a mention threshold with strongly positive sentiment, and publishes a daily summary of top entertainment topics. The function runs on an Eventbridge Schedule (every 3 hours, 5:10 AM – 11:10 PM UK time) and reads enriched articles from DynamoDB.
 
 ```bash
 cd bluesky
