@@ -2,13 +2,27 @@
 
 ## Executive Summary
 
-The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **$20.93 / £15.50**, with an annualised cost of **$251.16 / £185.95**.
+The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **$21.63 / £16.00**, with an annualised cost of **$259.56 / £192.00**.
 
 ---
 
 ## 1. Article Collection Pipeline
 
-### 1.1 Elastic Container Registry (ECR)
+### 1.1 OpenAI API Call
+
+**Model:** gpt-4o-mini
+
+**Operational Parameters:**
+- Articles Analysed: 50 per day
+- Tokens per Article: ~3,075 (3,000 input + 75 output)
+- Daily Token Volume: ~154,000 tokens
+- Monthly Token Volume: 4,613,000 tokens
+- Pricing: $0.15 per million tokens
+
+**Cost Calculation:**
+- **Monthly Cost: USD $0.70**
+
+### 1.2 Elastic Container Registry (ECR)
 
 | Component | Specification |
 |-----------|---------------|
@@ -108,6 +122,7 @@ The ECR repository stores the containerised dashboard application image.
 
 | Component | Monthly Cost (USD) |
 |-----------|-------------------|
+| OpenAI API | 0.70 |
 | Pipeline ECR | 0.0342 |
 | Pipeline Lambda | 0.0000 |
 | Pipeline Scheduler | 0.0000 |
@@ -116,8 +131,8 @@ The ECR repository stores the containerised dashboard application image.
 | BlueSky Scheduler | 0.0000 |
 | Dashboard ECR | 0.0195 |
 | Dashboard Fargate | 20.73 |
-| **Total Monthly** | **$20.93** |
-| **Total Annual** | **$251.16** |
+| **Total Monthly** | **$21.63** |
+| **Total Annual** | **$259.56** |
 
 ---
 
