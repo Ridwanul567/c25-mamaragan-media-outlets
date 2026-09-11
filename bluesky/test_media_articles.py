@@ -2,8 +2,23 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 from decimal import Decimal
 
-from media_articles import get_latest_articles, parse_published_date, analyse_article, summarise_metrics, check_condition
+from media_articles import get_latest_articles, parse_published_date, analyse_article, summarise_metrics, check_condition, get_boto3_session
+from unittest.mock import patch
 
+
+@patch("media_articles.boto3.Session")
+def test_get_boto3_session_uses_env_vars(mock_session, monkeypatch):
+    monkeypatch.setenv("AWS_REGION", "eu-west-2")
+    monkeypatch.setenv("ACCESS_KEY_ID", "fake-key")
+    monkeypatch.setenv("SECRET_ACCESS_KEY", "fake-secret")
+
+    get_boto3_session()
+
+    mock_session.assert_called_once_with(
+        region_name="eu-west-2",
+        aws_access_key_id="fake-key",
+        aws_secret_access_key="fake-secret",
+    )
 
 
 def make_article(published_date, article_id="some-id"):
