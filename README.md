@@ -124,7 +124,7 @@ Create `terraform.tfvars` in the `terraform_resources/` directory:
 ```hcl
 aws_access_key   = "{your access key id}"
 aws_secret_key   = "{your secret key}"
-resource_prefix  = "c25-media-outlets"
+resource_prefix  = "{your own project prefix}
 aws_region       = "eu-west-2"
 vpc_id           = "{your vpc id}"
 dashboard_password = "{your streamlit dashboard password}"
