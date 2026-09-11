@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **USD $20.93**, with an annualised cost of **USD $251.16**.
+The following document outlines the estimated operational costs for the Media Outlets Platform on AWS infrastructure. The platform comprises three main components: an article collection pipeline, a distributed database layer, and a public-facing dashboard. Monthly operational expenses are estimated at **$20.93 / £15.50**, with an annualised cost of **$251.16 / £185.95**.
 
 ---
 
