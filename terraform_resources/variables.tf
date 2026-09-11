@@ -27,3 +27,26 @@ variable "ecs_cluster_name" {
   type        = string
   default     = "c25-ecs-cluster"
 }
+
+variable "vpc_id" {
+  description = "ID of the VPC"
+  type        = string
+}
+
+variable "dashboard_password" {
+  type        = string
+  description = "Password for Streamlit dashboard access"
+  sensitive   = true
+}
+
+variable "bluesky_handle" {
+  type        = string
+  description = "Bluesky bot account handle"
+  sensitive   = true
+}
+
+variable "bluesky_password" {
+  type        = string
+  description = "Bluesky bot account password"
+  sensitive   = true
+}
