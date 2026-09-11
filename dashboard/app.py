@@ -1,20 +1,52 @@
 """Main entrypoint for the Media Outlets Streamlit Dashboard."""
 
+import os
 import pandas as pd
 import streamlit as st
 from src.charts import (
     plot_entity_sentiment_ranking,
     plot_outlet_volume_and_sentiment,
     plot_sentiment_and_volume_timeline,
+    plot_entity_keyword_frequency,
 )
 from src.data import load_data
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Page Configuration
 st.set_page_config(
-    page_title="Media Coverage Intelligence",
+    page_title="Otranto Development Media Coverage Intelligence",
     page_icon="📰",
     layout="wide",
 )
+
+# Password Protection
+
+
+def check_password() -> bool:
+    """Returns True if the user is authenticated, otherwise renders password input."""
+    if st.session_state.get("authenticated", False):
+        return True
+
+    # Render input box
+    password_input = st.text_input(
+        "Password", type="password", key="password_field")
+
+    # Evaluate when the user types something and submits
+    if password_input:
+        if password_input == os.environ.get("DASHBOARD_PASSWORD", "media2026"):
+            st.session_state["authenticated"] = True
+            st.rerun()  # Refresh immediately to load the dashboard
+        else:
+            st.error("Incorrect password")
+
+    return False
+
+
+if not check_password():
+    st.stop()
+
 
 # Data Loading
 df = load_data()
@@ -22,7 +54,7 @@ df = load_data()
 # Global Sidebar Controls
 st.sidebar.title("🕹️ Global Filters")
 
-# --- Entity Filter ---
+# Multi-Select Entity Filter
 if not df.empty and "entities" in df.columns:
     raw_entities = set()
     for entities_list in df["entities"]:
@@ -42,14 +74,15 @@ if not df.empty and "entities" in df.columns:
 else:
     all_entities = []
 
-selected_entity = st.sidebar.selectbox(
-    "Filter by Entity / Client:",
-    options=["All Entities"] + all_entities,
-    help="Type to search and select a specific person, organization, or brand.",
+# Multi-select
+selected_entities = st.sidebar.multiselect(
+    "Filter by Entities / Clients:",
+    options=all_entities,
+    default=[],  # Empty by default means show all entities
+    help="Select one or multiple entities to narrow down coverage across all charts.",
 )
-entity_filter = None if selected_entity == "All Entities" else selected_entity
 
-# --- Outlet Filter ---
+# Outlet Filter
 if not df.empty and "outlet" in df.columns:
     all_outlets = sorted(df["outlet"].dropna().unique().tolist())
 else:
@@ -61,20 +94,21 @@ selected_outlet = st.sidebar.selectbox(
     help="Type to search and filter dashboard data for a single news publisher.",
 )
 
-# --- Neutral Sentiment Checkbox ---
+# Neutral Sentiment Checkbox
 show_neutral_articles = st.sidebar.checkbox(
     "Include Neutral Sentiment",
     value=True,
     help="Uncheck to hide neutral coverage (-0.1 to 0.1 sentiment) across all charts.",
 )
 
-# --- Apply Global Filters to DataFrame ---
+# Apply Global Filters to DataFrame
 filtered_df = df.copy()
 
-if entity_filter and not filtered_df.empty:
+# Multi-select entity matching logic
+if selected_entities and not filtered_df.empty:
     filtered_df = filtered_df[
         filtered_df["entities"].apply(
-            lambda x: any(e.get("text") == entity_filter for e in x)
+            lambda x: any(e.get("text") in selected_entities for e in x)
             if isinstance(x, list)
             else False
         )
@@ -121,9 +155,13 @@ def render_visualisations_page():
             key="timeline_view_mode",
         )
 
+    # Pass primary selected entity or None if multiple/none are picked
+    primary_entity = selected_entities[0] if len(
+        selected_entities) == 1 else None
+
     trend_chart = plot_sentiment_and_volume_timeline(
         filtered_df,
-        selected_entity=entity_filter,
+        selected_entity=primary_entity,
         view_mode=chart_view_mode,
     )
     st.altair_chart(trend_chart, use_container_width=True)
@@ -164,23 +202,88 @@ def render_visualisations_page():
         st.write(
             "**Purpose:** *Identify who or what entity is receiving the most extreme coverage.*\n\n"
             "* **Lowest Sentiment (Risks):** Highlights topics suffering from negative sentiment requiring press response.\n"
-            "* **Highest Sentiment (Wins):** Highlights success stories and positive brand associations to emphasize in client reports."
+            "* **Highest Sentiment (Wins):** Highlights success stories and positive brand associations.\n"
+            "* **Both (Stacked):** Displays top wins directly stacked above top risks for a side-by-side comparative view."
         )
 
-    # Localized toggle for Best vs Worst
+    # Localised toggle for Best vs Worst vs Both
     ctrl_col3, _ = st.columns([2, 2])
     with ctrl_col3:
         leaderboard_mode = st.radio(
             "Chart Rankings:",
-            options=["Lowest Sentiment (Risks)", "Highest Sentiment (Wins)"],
+            options=[
+                "Lowest Sentiment (Risks)", "Highest Sentiment (Wins)", "Both (Stacked)"],
             horizontal=True,
             key="leaderboard_mode_toggle",
         )
 
-    mode_key = "best" if "Highest" in leaderboard_mode else "worst"
+    # Mode key mapping
+    if "Both" in leaderboard_mode:
+        mode_key = "both"
+    elif "Highest" in leaderboard_mode:
+        mode_key = "best"
+    else:
+        mode_key = "worst"
 
     ranking_chart = plot_entity_sentiment_ranking(filtered_df, mode=mode_key)
     st.altair_chart(ranking_chart, use_container_width=True)
+
+    st.divider()
+
+    # Chart 4: Entity Keyword Profiler
+    st.subheader("4. Entity Keyword & Topic Deep-Dive")
+
+    with st.expander("💡 How to use the Entity Keyword Profiler", expanded=False):
+        st.write(
+            "**Purpose:** *Discover the specific themes, topics, and buzzwords associated with a client or entity.*\n\n"
+            "* Select an entity from the dropdown to audit every keyword extracted across its media coverage.\n"
+            "* Use metric cards to instantly see total volume and overall sentiment for that specific entity."
+        )
+
+    # Single entity selector for deep-dive profiling
+    profiler_col1, profiler_col2 = st.columns([2, 1])
+
+    with profiler_col1:
+        profile_entity = st.selectbox(
+            "Select Entity to Profile:",
+            options=all_entities,
+            index=0 if all_entities else None,
+            key="entity_profiler_select",
+        )
+
+    if profile_entity:
+        # Isolate articles mentioning this entity
+        entity_df = df[
+            df["entities"].apply(
+                lambda x: any(
+                    (e.get("text") == profile_entity if isinstance(
+                        e, dict) else e == profile_entity)
+                    for e in x
+                )
+                if isinstance(x, list)
+                else False
+            )
+        ]
+
+        if not entity_df.empty:
+            # Display Key Metrics summary cards for the entity
+            total_articles = len(entity_df)
+            avg_sentiment = entity_df["sentiment_score"].mean()
+
+            m_col1, m_col2, m_col3 = st.columns(3)
+            m_col1.metric("Total Articles Mentioned", total_articles)
+            m_col2.metric("Avg Sentiment Score", f"{avg_sentiment:.2f}")
+
+            # Count total unique keywords extracted for this entity
+            all_kw = entity_df.explode("keywords")["keywords"].dropna()
+            m_col3.metric("Unique Keywords Found", len(all_kw.unique()))
+
+            # Render keyword frequency chart
+            kw_chart = plot_entity_keyword_frequency(
+                df, target_entity=profile_entity, top_n=12)
+            st.altair_chart(kw_chart, use_container_width=True)
+        else:
+            st.info(f"No articles found referencing '{profile_entity}'.")
 
 
 # Raw Data Page
@@ -259,8 +362,8 @@ def render_raw_data_page():
             "subjectivity_score": st.column_config.NumberColumn(
                 "Subjectivity", format="%.2f"
             ),
-            "published_at": st.column_config.DatetimeColumn(
-                "Published", format="D MMM YYYY, HH:mm"
+            "published_date": st.column_config.DatetimeColumn(
+                "Published (BST)", format="D MMM YYYY, HH:mm"
             ),
         },
         use_container_width=True,

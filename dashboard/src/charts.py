@@ -135,64 +135,164 @@ def plot_outlet_volume_and_sentiment(
 def plot_entity_sentiment_ranking(
     df: pd.DataFrame, mode: str = "worst"
 ) -> alt.Chart:
-    """Plot entities receiving either the lowest (worst) or highest (best) average sentiment score."""
-    if df.empty or "entities" not in df.columns:
+    """Generates a horizontal bar chart ranking entities by sentiment score."""
+    if df.empty:
         return alt.Chart(pd.DataFrame()).mark_text()
 
-    exploded = df.explode("entities").dropna(subset=["entities"])
-    exploded["entity_name"] = exploded["entities"].apply(
-        lambda e: e.get("text") if isinstance(e, dict) else None
+    working_df = df.copy()
+    working_df["sentiment_score"] = pd.to_numeric(
+        working_df["sentiment_score"], errors="coerce"
     )
 
-    # Calculate average sentiment per entity with at least 2 mentions
+    exploded = working_df.explode("entities").dropna(subset=["entities"])
+    exploded["entity_name"] = exploded["entities"].apply(
+        lambda x: x.get("text") if isinstance(x, dict) else str(x)
+    )
+
     entity_stats = (
         exploded.groupby("entity_name")
         .agg(
             avg_sentiment=("sentiment_score", "mean"),
-            count=("article_id", "count"),
+            article_count=("article_id", "count"),
         )
-        .query("count >= 2")
         .reset_index()
     )
+
+    entity_stats["avg_sentiment"] = pd.to_numeric(
+        entity_stats["avg_sentiment"], errors="coerce"
+    )
+    # Filter out low-volume noise
+    entity_stats = entity_stats[entity_stats["article_count"] >= 2]
 
     if entity_stats.empty:
         return alt.Chart(pd.DataFrame()).mark_text()
 
-    # Sort based on toggle selection
-    if mode == "best":
-        entity_stats = entity_stats.sort_values(
-            "avg_sentiment", ascending=False
-        ).head(10)
-        chart_title = "Top 10 Highest Sentiment Entities (PR Wins)"
-        sort_order = "-x"  # Highest value at top of bar chart
-    else:
-        entity_stats = entity_stats.sort_values(
-            "avg_sentiment", ascending=True
-        ).head(10)
-        chart_title = "Top 10 Lowest Sentiment Entities (PR Risks)"
-        sort_order = "x"   # Lowest/most negative at top
+    # Filter data based on selected view mode
+    if mode == "both":
+        top_best = entity_stats.nlargest(10, "avg_sentiment")
+        top_worst = entity_stats.nsmallest(10, "avg_sentiment")
+        chart_data = (
+            pd.concat([top_best, top_worst])
+            .drop_duplicates(subset=["entity_name"])
+            .sort_values(by="avg_sentiment", ascending=False)
+        )
+        title_text = "Top Entities by Sentiment (Wins & Risks)"
+    elif mode == "best":
+        chart_data = entity_stats.nlargest(10, "avg_sentiment").sort_values(
+            by="avg_sentiment", ascending=False
+        )
+        title_text = "Top 10 Highest Sentiment Entities (Wins)"
+    else:  # mode == "worst"
+        chart_data = entity_stats.nsmallest(10, "avg_sentiment").sort_values(
+            by="avg_sentiment", ascending=True
+        )
+        title_text = "Top 10 Lowest Sentiment Entities (Risks)"
 
-    return (
-        alt.Chart(entity_stats)
-        .mark_bar()
+    # Unified chart definition with distinct bar borders and fixed row height
+    chart = (
+        alt.Chart(chart_data)
+        .mark_bar(
+            stroke="#0e1117",
+            strokeWidth=2,
+            height=20,  # Fixed individual bar height
+        )
         .encode(
-            y=alt.Y("entity_name:N", title="Entity", sort=sort_order),
             x=alt.X(
                 "avg_sentiment:Q",
-                title="Avg Sentiment",
+                title="Average Sentiment Score",
                 scale=alt.Scale(domain=[-1.0, 1.0]),
             ),
-            color=alt.condition(
-                alt.datum.avg_sentiment >= 0,
-                alt.value("#2ecc71"),  # Green for positive
-                alt.value("#e74c3c"),  # Red for negative
+            y=alt.Y(
+                "entity_name:N",
+                sort="-x",
+                title="Entity",
+                axis=alt.Axis(labelLimit=250),
+            ),
+            color=alt.Color(
+                "avg_sentiment:Q",
+                scale=alt.Scale(
+                    domain=[-0.8, 0, 0.8], scheme="redyellowgreen"
+                ),
+                legend=None,
             ),
             tooltip=[
-                "entity_name",
+                alt.Tooltip("entity_name:N", title="Entity"),
                 alt.Tooltip("avg_sentiment:Q", format=".2f",
                             title="Avg Sentiment"),
-                alt.Tooltip("count:Q", title="Article Count"),
+                alt.Tooltip("article_count:Q", title="Articles"),
             ],
         )
-        .properties(height=320, title=chart_title)
+        .properties(
+            title=title_text,
+            # Ensures fixed 26px vertical space per row regardless of dataset length
+            height=alt.Step(26),
+        )
     )
+
+    return chart
+
+
+def plot_entity_keyword_frequency(
+    df: pd.DataFrame, target_entity: str, top_n: int = 15
+) -> alt.Chart:
+    """Generates a bar chart of the most frequent keywords for a selected entity."""
+    if df.empty or not target_entity:
+        return alt.Chart(pd.DataFrame()).mark_text()
+
+    # Filter for articles containing the selected entity
+    entity_articles = df[
+        df["entities"].apply(
+            lambda x: any(
+                (e.get("text") == target_entity if isinstance(
+                    e, dict) else e == target_entity)
+                for e in x
+            )
+            if isinstance(x, list)
+            else False
+        )
+    ]
+
+    if entity_articles.empty or "keywords" not in entity_articles.columns:
+        return alt.Chart(pd.DataFrame()).mark_text()
+
+    # Flatten the keywords column
+    exploded_kw = entity_articles.explode(
+        "keywords").dropna(subset=["keywords"])
+
+    # Clean keyword strings
+    exploded_kw["clean_keyword"] = exploded_kw["keywords"].apply(
+        lambda x: x.get("text", "").strip().lower() if isinstance(
+            x, dict) else str(x).strip().lower()
+    )
+
+    # Filter out empty or extremely short keywords
+    exploded_kw = exploded_kw[exploded_kw["clean_keyword"].str.len() > 2]
+
+    # Aggregate total occurrences
+    kw_counts = (
+        exploded_kw.groupby("clean_keyword")
+        .size()
+        .reset_index(name="count")
+        .nlargest(top_n, "count")
+    )
+
+    if kw_counts.empty:
+        return alt.Chart(pd.DataFrame()).mark_text()
+
+    # Build horizontal bar chart
+    chart = (
+        alt.Chart(kw_counts)
+        .mark_bar(color="#4F46E5")
+        .encode(
+            x=alt.X("count:Q", title="Total Keyword Mentions"),
+            y=alt.Y("clean_keyword:N", sort="-x", title="Keyword / Topic"),
+            tooltip=["clean_keyword", alt.Tooltip(
+                "count:Q", title="Mentions")],
+        )
+        .properties(
+            title=f"Top Associated Keywords for '{target_entity}'",
+            height=350,
+        )
+    )
+
+    return chart
