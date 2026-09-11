@@ -7,7 +7,7 @@ from atproto import Client
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-from media_articles import (get_dynamodb_table, analyse_article, get_latest_articles, 
+from media_articles import (get_dynamodb_table, analyse_article, get_latest_articles,
                             summarise_metrics, check_condition, parse_published_date
                             )
 
@@ -27,7 +27,7 @@ def post_message(message: str, client: Client):
     try:
         post = client.send_post(message)
         rkey = post.uri.split('/')[-1]
-        did = post.uri.split('/')[2] 
+        did = post.uri.split('/')[2]
         url = f"https://bsky.app/profile/{did}/post/{rkey}"
         return url
     except Exception as e:
@@ -60,6 +60,7 @@ def format_daily_summary_post(metrics):
     topics = ", ".join(top_five)
     return f"Today's top entertainment topics: {topics}."
 
+
 def post_daily_summary(metrics, client):
     """Post the daily topic summary to Bluesky, return the URL or None."""
     if not metrics["top_keywords"]:
@@ -90,7 +91,8 @@ def handler(event, context):
     uk_time = datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/London"))
     if uk_time.hour == 5:
         daily_articles = get_latest_articles(table, hours=24)
-        daily_analysed = [analyse_article(article) for article in daily_articles]
+        daily_analysed = [analyse_article(article)
+                          for article in daily_articles]
         daily_metrics = summarise_metrics(daily_analysed)
         summary_url = post_daily_summary(daily_metrics, client)
 
