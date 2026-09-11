@@ -25,20 +25,22 @@ st.set_page_config(
 
 
 def check_password() -> bool:
-    def password_entered():
-        if st.session_state["password"] == os.environ.get("DASHBOARD_PASSWORD"):
-            st.session_state["authenticated"] = True
-            del st.session_state["password"]
-        else:
-            st.session_state["authenticated"] = False
-
-    if st.session_state.get("authenticated"):
+    """Returns True if the user is authenticated, otherwise renders password input."""
+    if st.session_state.get("authenticated", False):
         return True
 
-    st.text_input("Password", type="password",
-                  on_change=password_entered, key="password")
-    if "authenticated" in st.session_state and not st.session_state["authenticated"]:
-        st.error("Incorrect password")
+    # Render input box
+    password_input = st.text_input(
+        "Password", type="password", key="password_field")
+
+    # Evaluate when the user types something and submits
+    if password_input:
+        if password_input == os.environ.get("DASHBOARD_PASSWORD", "media2026"):
+            st.session_state["authenticated"] = True
+            st.rerun()  # Refresh immediately to load the dashboard
+        else:
+            st.error("Incorrect password")
+
     return False
 
 
