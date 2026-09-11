@@ -124,10 +124,10 @@ Create `terraform.tfvars` in the `terraform_resources/` directory:
 ```hcl
 aws_access_key   = "{your access key id}"
 aws_secret_key   = "{your secret key}"
-resource_prefix  = "{your own project prefix}
-aws_region       = "eu-west-2"
-vpc_id           = "{your vpc id}"
-dashboard_password = "{your streamlit dashboard password}"
+resource_prefix  = "{your desired resource prefix}"
+aws_region      = "{your desired aws region}"
+vpc_id           = "{your VPC id}"
+dashboard_password = "{your dashboard password}"
 bluesky_handle   = "{your bluesky bot handle}"
 bluesky_password = "{your bluesky bot password}"
 ```
